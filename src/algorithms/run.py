@@ -102,7 +102,6 @@ def run_algo_docker(
     client = docker.from_env()
     container = client.containers.run(
         docker_tag,
-        runtime="nvidia",
         command=cmd,
         # user="$(id -u):$(id -g)",
         volumes={

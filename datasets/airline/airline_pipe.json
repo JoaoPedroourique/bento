@@ -1,0 +1,44 @@
+{
+  "Input": [
+    {
+      "method": "load_dataset",
+      "input": {
+        "sep": ",",
+        "compression": "infer"
+      },
+      "input_koalas": {
+        "sep": ",",
+        "assume_missing": "True",
+        "compression": "gzip"
+    }
+    },
+    {
+      "method": "force_execution",
+      "input": {}
+    }
+  ],
+  "EDA": [
+    {
+      "method": "get_columns",
+      "input": {}
+    },
+    {
+      "method": "locate_null_values",
+      "input": {
+        "column": "ArrTime"
+      }
+    },
+    {
+      "method": "sort",
+      "input": {
+        "columns": ["Year"]
+      },
+      "input_dask": {
+        "columns": ["Year"],
+        "cast": {
+          "Year": "int64"
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,0 @@
-FROM df-benchmarks
-
-RUN pip uninstall -y pandas
-
-RUN pip install pandas==2.0.0

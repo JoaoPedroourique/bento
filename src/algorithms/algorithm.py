@@ -2,6 +2,8 @@ import psutil
 import abc
 
 from src.datasets.dataset import Dataset
+import glob
+
 
 
 class AbstractAlgorithm(abc.ABC):
@@ -73,8 +75,39 @@ class AbstractAlgorithm(abc.ABC):
         # return in kB for backwards compatibility
         return psutil.Process().memory_info().rss / 1024
 
+    def load_all_files_until_max_rows(self, path, max_rows, read_function, **kwargs):
+        """
+        Load all the files in the provided path until max_rows is reached.
+        If max_rows is None, load all the files that match pattern.
+        :param path: path pattern of the files to load
+        :param max_rows: maximum number of rows to load
+        :param format: format (json, csv, xml, excel, parquet, sql)
+        :param kwargs: extra arguments
+        :return:
+        """
+        all_files = glob.glob(path)
+        total_rows = 0
+        dfs = []
+        for f in all_files:
+            # Calculate the number of rows to read from this file
+            rows_to_read = max_rows - total_rows
+            if max_rows is not None and rows_to_read <= 0:
+                break
+
+            # Read the file (or part of it)
+            kwargs["nrows"] = rows_to_read
+            df = read_function(f, **kwargs)
+
+            # Update the total number of rows read
+            total_rows += len(df)
+
+            # Add the DataFrame to the list
+            dfs.append(df)
+
+        return dfs
+
     @abc.abstractmethod
-    def load_dataset(self, path, format, **kwargs):
+    def load_dataset(self, path, max_rows, format, **kwargs):
         """
         Load the provided dataframe
         :param path: path of the file to load

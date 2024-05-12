@@ -1,4 +1,3 @@
-from hashlib import algorithms_available
 import os
 import json
 import resource
@@ -228,7 +227,7 @@ def execute_methods(methods: dict, ds: Dataset, algo: AbstractAlgorithm, step=Fa
         except Exception as e:
             print(
                 colors.color(
-                    "Cannot execute the method: " + test["method"] + "because" + str(e),
+                    "Cannot execute the method: " + test["method"] + " because  " + str(e),
                     fg="red",
                 )
             )
@@ -292,7 +291,7 @@ def install(algorithm, build_arg):
             "docker build --rm -t df-benchmarks -f install/Dockerfile .", shell=True
         )
     else:
-        print("Base image already builded")
+        print("Base image already built")
 
     if algorithm:
         tags = [algorithm]
@@ -315,18 +314,18 @@ def install(algorithm, build_arg):
         f.split(".")[1] for f in os.listdir("install") if f.startswith("Dockerfile.")
     ]
     if algorithm not in dockerfiles:
-        print("Image name not found in dockerfiles")
+        print(f"Image name {algorithm} not found in dockerfiles")
         # stop execution
         return 1
 
-    if f"df-benchmarks-{algorithm}" in images:
-        print("Algorithm image already builded")
-
+    if f'df-benchmarks-{algorithm}' in images:
+        print('Algorithm image already built')
+        
     else:
         try:
             install_status = [build(tag, build_arg) for tag in tags]
         except Exception as e:
             print(e)
             return 1
-        print("\n\nInstall Status:\n" + "\n".join(str(algo) for algo in install_status))
+        print('\n\nInstall Status:\n' + '\n'.join(str(algo) for algo in install_status))
     return 0

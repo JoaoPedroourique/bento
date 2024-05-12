@@ -11,8 +11,8 @@ from typing import Union
 
 import pandas as pd
 import ast
-from databricks.koalas import DataFrame, Series
-from databricks.koalas.config import reset_option, set_option
+from pyspark.pandas import DataFrame, Series
+from pyspark.pandas.config import reset_option, set_option
 from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from src.algorithms.utils import timing
@@ -35,9 +35,10 @@ class KoalasBench(AbstractAlgorithm):
         jarPath=None,
         mem: str = None,
         cpu: int = None,
+        pipeline: bool = False,
         **kwargs
     ):
-
+        self.pipeline = pipeline
         self.mem_ = mem
         self.cpu_ = cpu
         import sys
@@ -78,7 +79,7 @@ class KoalasBench(AbstractAlgorithm):
         the custom SparkConf
         """
         global ks
-        import databricks.koalas as ks
+        import pyspark.pandas as ks
 
     @timing
     def get_pandas_df(self):
@@ -107,21 +108,23 @@ class KoalasBench(AbstractAlgorithm):
         """
         self.ds_ = ds
         path = ds.dataset_attribute.path
-        format = ds.dataset_attribute.type
+        data_format = ds.dataset_attribute.type
+        max_rows = ds.dataset_attribute.max_rows
+        if max_rows is None:
+            print("loading data with no max_rows limit")
 
-        if format == "csv":
-            self.df_ = self.read_csv(path, **kwargs)
-        elif format == "excel":
-            self.df_ = self.read_excel(path, **kwargs)
-        elif format == "json":
-            self.df_ = self.read_json(path, **kwargs)
-        elif format == "parquet":
-            self.df_ = self.read_parquet(path, **kwargs)
-        elif format == "sql":
-            self.df_ = self.read_sql(path, conn, **kwargs)
+        if data_format == "csv" or data_format == "csv.gz":
+            read_function = self.read_csv
+        elif data_format == "parquet":
+            read_function = self.read_parquet
+        else:
+            raise AssertionError("could not determine data_format")
 
-        elif format == "xml":
-            self.df_ = self.read_xml(path, **kwargs)
+        dfs = self.load_all_files_until_max_rows(
+            path, max_rows, read_function, **kwargs
+        )
+        # Concatenate all the DataFrames
+        self.df_ = ks.concat(dfs, ignore_index=True)
 
         if "partition_col" in kwargs:
             self.df_ = self.df_.set_index(kwargs["partition_col"])
@@ -668,7 +671,7 @@ class KoalasBench(AbstractAlgorithm):
 
     @timing
     def done(self):
-        self.sc.stop()
+        pass
 
     def force_execution(self):
         self.df_.to_pandas()

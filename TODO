@@ -1,0 +1,11 @@
+[x] decide on a second library which would be simple to test on
+[x] define how to access my datasets
+[x] create basic testing functions for pandas and second library
+[x] enable output of results
+[] apenas csv.gz?
+[] avaliar como obtém as métricas (memory, ram)
+[] determinar quais métodos alterar/remover/adicionar
+[] aprofundar nas libs
+[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
+
+python run_algorithm.py --algorithm pandas --dataset airline --pipeline-step

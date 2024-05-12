@@ -1,4 +1,8 @@
 *.csv
+*.csv.gz
 *.log
 src/algorithms/__pycache__
 src/datasets/__pycache__
+*.pyc
+**/__pycache__
+*.cpython-*.pyc

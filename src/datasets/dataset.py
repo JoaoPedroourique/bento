@@ -11,6 +11,7 @@ class DatasetAttribute(BaseModel):
     test: Optional[str]
     pipe: str
     type: str
+    max_rows: Optional[int]
 
 
 class Dataset(BaseModel):

@@ -5,7 +5,7 @@ RUN apt-get update && \
     add-apt-repository ppa:openjdk-r/ppa
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-RUN ln -fs /usr/share/zoneinfo/Europe/Rome /etc/localtime
+RUN ln -fs /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 RUN dpkg-reconfigure -f noninteractive tzdata
 
 RUN apt-get update && apt-get install -y \
@@ -27,10 +27,10 @@ RUN apt-get update && apt-get install -y \
     python3-openssl \
     git
 
-RUN wget https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz \
-    && tar xvf Python-3.9.2.tgz
+    RUN wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz \
+    && tar xvf Python-3.9.18.tgz
 
-RUN cd Python-3.9.2 \
+RUN cd Python-3.9.18 \
     && ./configure --enable-optimizations \
     && make -j 8 \
     && make altinstall

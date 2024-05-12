@@ -1,5 +1,0 @@
-FROM df-benchmarks
-
-ENV MODIN_ENGINE=unidist
-RUN python3.9 -m pip install unidist
-RUN python3.9 -m pip install modin

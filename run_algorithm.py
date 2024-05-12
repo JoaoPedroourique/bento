@@ -74,24 +74,6 @@ if __name__ == "__main__":
             args.pipeline_step,
         )
 
-    # if args.locally:
-    #     # check python version
-    #     if sys.version_info[0] < 3:
-    #         raise Exception("Must be using Python 3")
-
-    #     # install requirements
-    #     if args.requirements:
-    #         os.system("pip install -r requirements.txt")
-
-    #     from src.algorithms.run import run_algo_locally
-    #     from src.datasets.dataset import Dataset
-
-    #     ds = Dataset().get_dataset_by_name(args.dataset)
-    #     if ds is None:
-    #         raise Exception(f"Dataset {args.dataset} not found")
-    #     print("Running test functions")
-    #     run_algo_locally(args.algorithm, args.dataset, args.algorithm_params, args.cpu_limit, args.mem_limit)
-
     else:
         try:
             import docker

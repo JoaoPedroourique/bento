@@ -9,7 +9,7 @@ from src.algorithms.utils import timing
 from src.datasets.dataset import Dataset
 
 from src.algorithms.algorithm import AbstractAlgorithm
-
+import polars.selectors as cs
 
 class PolarsBench(AbstractAlgorithm):
     df_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
@@ -56,22 +56,41 @@ class PolarsBench(AbstractAlgorithm):
         """
         self.ds_ = ds
         path = ds.dataset_attribute.path
-        format = ds.dataset_attribute.type
+        data_format = ds.dataset_attribute.type
+        max_rows = ds.dataset_attribute.max_rows
+        if max_rows is None:
+            print("loading data with no max_rows limit")
 
-        if format == "csv":
-            self.df_ = self.read_csv(path, **kwargs)
-        elif format == "json":
-            self.df_ = self.read_json(path, **kwargs)
-        elif format == "parquet":
-            self.df_ = self.read_parquet(path, **kwargs)
-        elif format == "sql":
-            self.df_ = self.read_sql(path, conn, **kwargs)
-        elif format == "hdf5":
-            self.df_ = self.read_hdf5(path, **kwargs)
-        elif format == "xml":
-            self.df_ = self.read_xml(path, **kwargs)
+        if data_format == "csv" or data_format == "csv.gz":
+            read_function = self.read_csv
+        elif data_format == "parquet":
+            read_function = self.read_parquet
+        else:
+            raise AssertionError("could not determine data_format")
+        dfs = self.load_all_files_until_max_rows(
+            path, max_rows, read_function, **kwargs
+        )
+        # Get the dtypes of the first DataFrame
+        dtypes = dfs[0].dtypes
+        columns = dfs[0].columns
+        column_dtype_dict = {column: dtype for column, dtype in zip(columns, dtypes)}
+
+        # Iterate over the rest of the DataFrames
+        for i in range(1, len(dfs)):
+            # Cast each DataFrame to the dtypes of the first DataFrame
+            # for column, dtype in zip(columns, dtypes):
+            dfs[i] = dfs[i].cast({'CRSElapsedTime':pl.Float64, 'CancellationCode':pl.Utf8, 'CarrierDelay':pl.Float64,
+       'WeatherDelay':pl.Float64, 'NASDelay':pl.Float64, 'SecurityDelay':pl.Float64, 'LateAircraftDelay':pl.Float64})
+                # dfs[i] = dfs[i].cast({cs.numeric(): pl.Int64, cs.temporal(): pl.Utf8})
+
+
+        # for column, dtype in zip(columns, dtypes):
+        #     print(column, dtype)
+        # Concatenate all the DataFrames
+        self.df_ = pl.concat(dfs)
 
         self.df_ = self.df_.lazy()
+
         return self.df_
 
     def read_json(self, path, **kwargs):
@@ -155,7 +174,7 @@ class PolarsBench(AbstractAlgorithm):
         :param columns columns to use for sorting
         :param ascending if sets to False sorts in descending order (default True)
         """
-        self.df_ = self.df_.sort(columns, reverse=(not ascending))
+        self.df_ = self.df_.sort(columns, descending=(not ascending))
         return self.df_
 
     @timing
