@@ -6,7 +6,7 @@ import warnings
 
 from polars import col
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 import re
 from typing import Union
 from haversine import haversine
@@ -22,9 +22,12 @@ from src.algorithms.algorithm import AbstractAlgorithm
 class DataTableBench(AbstractAlgorithm):
     df_: Union[pd.DataFrame, pd.Series] = None
     backup_: Union[pd.DataFrame, pd.Series] = None
-    ds_ : Dataset = None
-    #name = "pandas"
-    def __init__(self, name:str, mem: str = None, cpu: int = None, pipeline: bool = False):
+    ds_: Dataset = None
+
+    # name = "pandas"
+    def __init__(
+        self, name: str, mem: str = None, cpu: int = None, pipeline: bool = False
+    ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
@@ -64,7 +67,7 @@ class DataTableBench(AbstractAlgorithm):
         self.ds_ = ds
         path = ds.dataset_attribute.path
         format = ds.dataset_attribute.type
-        
+
         if format == "csv":
             self.df_ = self.read_csv(path, **kwargs)
         elif format == "excel":
@@ -79,7 +82,7 @@ class DataTableBench(AbstractAlgorithm):
             self.df_ = self.read_hdf5(path, **kwargs)
         elif format == "xml":
             self.df_ = self.read_xml(path, **kwargs)
-            
+
         return self.df_
 
     def read_sql(self, query, conn, **kwargs):
@@ -101,7 +104,7 @@ class DataTableBench(AbstractAlgorithm):
         """
         self.df_ = dt.fread(path, **kwargs)
         return self.df_
-    
+
     def read_hdf5(self, path, **kwargs):
         """
         Given a connection and a query
@@ -159,7 +162,7 @@ class DataTableBench(AbstractAlgorithm):
         """
         columns_not_drop = [c for c in self.df_.names if c not in columns]
         self.df_ = self.df_[:, columns_not_drop]
-        
+
         return self.df_
 
     @timing
@@ -169,12 +172,12 @@ class DataTableBench(AbstractAlgorithm):
         Columns is a dictionary: {"column_name": "new_name"}
         """
         for c, n in columns.items():
-            #print(self.df_[:, {n: dt.f[c]}])
+            # print(self.df_[:, {n: dt.f[c]}])
             self.df_[n] = self.df_[:, c]
             self.df_ = self.df_[:, [x for x in self.df_.names if x != c]]
-            #self.df_ = 
-            #self.df_ = self.df_[:, {dt.f[c]: n}]
-        #self.df_ = self.df_[:, dt.update(**columns)]
+            # self.df_ =
+            # self.df_ = self.df_[:, {dt.f[c]: n}]
+        # self.df_ = self.df_[:, dt.update(**columns)]
         return self.df_
 
     @timing
@@ -192,8 +195,7 @@ class DataTableBench(AbstractAlgorithm):
         :param value value to use for replacing null values
         :columns columns to fill, if empty all the dataframe is filled
         """
-        
-        
+
         if func:
             value = eval(value)
 
@@ -206,7 +208,6 @@ class DataTableBench(AbstractAlgorithm):
         for c in columns:
             self.df_[c] = dt.ifelse(dt.isna(dt.f[c]), value, dt.f[c])
         return self.df_
-
 
     @timing
     def one_hot_encoding(self, columns):
@@ -241,7 +242,7 @@ class DataTableBench(AbstractAlgorithm):
             column = self.get_columns()
 
         return self.df_[:, dt.isna(dt.f[column])]
-        #return self.df_[dt.isna(dt.f[column])]
+        # return self.df_[dt.isna(dt.f[column])]
 
     @timing
     def search_by_pattern(self, column, pattern):
@@ -253,25 +254,31 @@ class DataTableBench(AbstractAlgorithm):
         """
         search = self.df_.copy()
         try:
-            filtered = list(filter(lambda x: re.match(pattern, x), search[column].to_list()[0]))
+            filtered = list(
+                filter(lambda x: re.match(pattern, x), search[column].to_list()[0])
+            )
         except Exception:
             print("not regex")
-            filtered = list(filter(lambda x: pattern in x if x else "", search[column].to_list()[0]))
-        #search[c] = dt.ifelse(dt.isna(dt.f[c]), '', dt.f[c])
+            filtered = list(
+                filter(lambda x: pattern in x if x else "", search[column].to_list()[0])
+            )
+        # search[c] = dt.ifelse(dt.isna(dt.f[c]), '', dt.f[c])
         if filtered:
             return search[:, dt.f[column] == filtered]
-    
 
     @timing
-    def locate_outliers(self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs):
+    def locate_outliers(
+        self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs
+    ):
         """
         Returns the rows of the dataframe that have values
         in the provided column lower or higher than the values
         of the lower/upper quantile.
-        """       
+        """
         if column == "all":
             column = self.df_.names
         import numpy as np
+
         cols = [
             c
             for c in column
@@ -279,7 +286,9 @@ class DataTableBench(AbstractAlgorithm):
             in {"Type.int32", "Type.int64", "Type.float32", "Type.float64"}
         ]
         filtered = self.df_[:, cols]
-        lower, upper = np.percentile(np.array(filtered), [(lower_quantile*100), (upper_quantile*100)], axis=0)
+        lower, upper = np.percentile(
+            np.array(filtered), [(lower_quantile * 100), (upper_quantile * 100)], axis=0
+        )
         for c in cols:
             filtered = filtered[dt.f[c] <= lower[0], :]
             filtered = filtered[dt.f[c] >= upper[0], :]
@@ -292,7 +301,6 @@ class DataTableBench(AbstractAlgorithm):
         """
         return self.df_.types
 
-
     @timing
     def cast_columns_types(self, dtypes):
         """
@@ -303,18 +311,20 @@ class DataTableBench(AbstractAlgorithm):
         """
         for column, dtype in dtypes.items():
             if (str(dtype) != "str") and (column in self.df_.names):
-                if str(dtype) == "Type.time64":                
+                if str(dtype) == "Type.time64":
                     try:
                         self.df_[column] = dtype
                     except Exception:
-                        arr = [f'1970-01-01 {i}' for i in self.df_[column].to_list()[0]]
-                        arr = [datetime.datetime.strptime(i, '%Y-%m-%d %H:%M:%S') for i in arr]
+                        arr = [f"1970-01-01 {i}" for i in self.df_[column].to_list()[0]]
+                        arr = [
+                            datetime.datetime.strptime(i, "%Y-%m-%d %H:%M:%S")
+                            for i in arr
+                        ]
                         self.df_[column] = np.array(arr)
                 else:
                     self.df_[column] = dtype
-                
-        return self.df_
 
+        return self.df_
 
     @timing
     def get_stats(self):
@@ -323,7 +333,7 @@ class DataTableBench(AbstractAlgorithm):
         Only for numeric columns.
         Min value, max value, average value, standard deviation, and standard quantiles.
         """
-        
+
         return {
             "min": self.df_.min(),
             "max": self.df_.max(),
@@ -332,7 +342,7 @@ class DataTableBench(AbstractAlgorithm):
             "skew": self.df_.skew(),
             "kurt": self.df_.kurt(),
             "sum": self.df_.sum(),
-            "countna": self.df_.countna()
+            "countna": self.df_.countna(),
         }
 
     @timing
@@ -346,7 +356,7 @@ class DataTableBench(AbstractAlgorithm):
          - suggested_dtype: suggested data type
         """
         pass
-    
+
     @timing
     def check_allowed_char(self, column, pattern):
         """
@@ -363,6 +373,7 @@ class DataTableBench(AbstractAlgorithm):
         Drop duplicate rows.
         """
         import numpy as np
+
         arr_dt = np.array(self.df_.to_list()).T
         s = {tuple(i) for i in arr_dt}
         indices = [i for i, value in enumerate(arr_dt) if tuple(value) in s]
@@ -386,25 +397,31 @@ class DataTableBench(AbstractAlgorithm):
         An example of format is '%m/%d/%Y'
         """
         import numpy as np
-        if self.df_[column].types[0] not in {"Type.date32", "Type.time", "Type.datetime"}:
+
+        if self.df_[column].types[0] not in {
+            "Type.date32",
+            "Type.time",
+            "Type.datetime",
+        }:
             from datetime import datetime
+
             date_time = []
             for date in self.df_[column].to_list()[0]:
                 try:
                     date_time.append(datetime.strptime(date, format))
                 except Exception:
-                    date_time.append('')
+                    date_time.append("")
             self.df_[column] = np.array(date_time)
-        
+
         date_time = []
         for i in self.df_[column].to_list()[0]:
-            if i != '':
+            if i != "":
                 date_time.append(i.strftime(format))
-            else:   
-                date_time.append('')
+            else:
+                date_time.append("")
         self.df_[column] = np.array(date_time)
         return self.df_
-    
+
     @timing
     def set_header_case(self, case):
         """
@@ -426,18 +443,19 @@ class DataTableBench(AbstractAlgorithm):
         if len(columns) == 0:
             columns = self.df_.names
         import numpy as np
+
         for column in columns:
             arr = self.df_[:, columns].to_list()[0]
             if case == "lower":
-                arr = list(map(str.lower,arr))
+                arr = list(map(str.lower, arr))
             elif case == "upper":
-                arr =  list(map(str.upper,arr))
+                arr = list(map(str.upper, arr))
             elif case == "title":
-                arr =  list(map(str.title,arr))
+                arr = list(map(str.title, arr))
             elif case == "capitalize":
-                arr =  list(map(str.capitalize,arr))
+                arr = list(map(str.capitalize, arr))
             elif case == "swapcase":
-                 list(map(str.swapcase,arr))
+                list(map(str.swapcase, arr))
             self.df_[column] = np.array(arr)
 
         return self.df_
@@ -449,7 +467,7 @@ class DataTableBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         pass
-    
+
     @timing
     def pivot(self, index, columns, values, aggfunc):
         """
@@ -458,10 +476,7 @@ class DataTableBench(AbstractAlgorithm):
         (see pivot_table in pandas documentation)
         """
         print("Pivot table is not supported yet, groupby is used instead")
-        return  self.df_[:, aggfunc(dt.f[values]), dt.by(index+columns) ]
-    
-
-
+        return self.df_[:, aggfunc(dt.f[values]), dt.by(index + columns)]
 
     @timing
     def unpivot(self, columns, var_name, val_name):
@@ -501,7 +516,7 @@ class DataTableBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         pass
-    
+
     @timing
     def remove_diacritics(self, columns):
         """
@@ -538,11 +553,11 @@ class DataTableBench(AbstractAlgorithm):
             f = eval(f)
 
         import numpy as np
+
         arr = self.df_[:, columns].to_numpy()
         self.df_[:, col_name] = np.apply_along_axis(f, 1, arr)
-        
-        return self.df_
 
+        return self.df_
 
     @timing
     def join(self, other, left_on=None, right_on=None, how="inner", **kwargs):
@@ -571,11 +586,15 @@ class DataTableBench(AbstractAlgorithm):
         try:
             return self.df_[:, eval(f), dt.by(columns)]
         except Exception:
-            numeric_columns = [x for x in self.df_.names if self.df_[x].types[0] in [dt.Type.int32, dt.Type.int64, dt.Type.float32, dt.Type.float64]]
+            numeric_columns = [
+                x
+                for x in self.df_.names
+                if self.df_[x].types[0]
+                in [dt.Type.int32, dt.Type.int64, dt.Type.float32, dt.Type.float64]
+            ]
             filt = self.df_.copy()
             filt = filt[:, numeric_columns]
             return filt[:, eval(f), dt.by(columns)]
-    
 
     @timing
     def categorical_encoding(self, columns):
@@ -584,17 +603,19 @@ class DataTableBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         import itertools as it
+
         for c in columns:
             categories = {k: v for v, k in enumerate(set(self.df_[c].to_list()[0]))}
             mixer = it.product([c], categories)
-            conditions = [(name, dt.f[name] == value, categories[value])
-                        for name, value in mixer]
+            conditions = [
+                (name, dt.f[name] == value, categories[value]) for name, value in mixer
+            ]
 
             for name, cond, value in conditions:
-                self.df_[cond, f'{name}_cat'] = value
+                self.df_[cond, f"{name}_cat"] = value
 
-            self.df_[name] = self.df_[f'{name}_cat']
-            self.df_ = self.df_[:, [x for x in self.df_.names if x != f'{name}_cat']]
+            self.df_[name] = self.df_[f"{name}_cat"]
+            self.df_ = self.df_[:, [x for x in self.df_.names if x != f"{name}_cat"]]
         return self.df_
 
     @timing
@@ -625,9 +646,9 @@ class DataTableBench(AbstractAlgorithm):
         """
         for c in columns:
             self.df_[c] = dt.ifelse(dt.f[c] == to_replace, value, dt.f[c])
-            
+
         return self.df_
-    
+
     @timing
     def edit(self, columns, func):
         """
@@ -636,13 +657,14 @@ class DataTableBench(AbstractAlgorithm):
         """
         if isinstance(func, str):
             func = eval(func)
-            
+
         import numpy as np
+
         for c in columns:
             arr = np.array(self.df_[:, c])
             arr = np.apply_along_axis(func, 1, arr)
             self.df_[:, c] = arr
-        
+
         return self.df_
 
     @timing
@@ -667,6 +689,7 @@ class DataTableBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         import numpy as np
+
         for c in columns:
             self.df_[c] = np.around(self.df_[:, c].to_numpy(), decimals=n)
         return self.df_
@@ -678,13 +701,14 @@ class DataTableBench(AbstractAlgorithm):
         Duplicate columns are those which have same values for each row.
         """
         pass
-    
+
     @timing
     def to_csv(self, path="./pipeline_output/datatable_output.csv", **kwargs):
         """
         Export the dataframe in a csv file.
         """
         import os
+
         if not os.path.exists("./pipeline_output"):
             os.makedirs("./pipeline_output")
 
@@ -707,13 +731,13 @@ class DataTableBench(AbstractAlgorithm):
             self.df_ = self.df_[eval(query), :]
             return self.df_
         return self.df_[eval(query), :]
-    
+
     def force_execution(self):
         self.df_.materialize()
-    
+
     @timing
     def done(self):
         pass
-        
+
     def set_construtor_args(self, args):
         pass

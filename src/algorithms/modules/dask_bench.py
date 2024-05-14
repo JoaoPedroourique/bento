@@ -8,6 +8,7 @@ import dask.dataframe as dd
 import h5py
 import numpy as np
 import pandas as pd
+
 # config.set(scheduler='processes', num_workers=24)
 from dask import config, optimize
 from dask.distributed import Client, LocalCluster
@@ -24,10 +25,10 @@ from src.datasets.dataset import Dataset
 class DaskBench(AbstractAlgorithm):
     df_ = None
     backup_ = None
-    ds_ : Dataset = None
+    ds_: Dataset = None
     name = "dask"
     constructor_args = {}
-    
+
     def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
         import warnings
 
@@ -37,13 +38,12 @@ class DaskBench(AbstractAlgorithm):
         warnings.filterwarnings("ignore")
 
         # Disable all Dask warnings
-        dask.config.set({'logging.distributed': 'error'})
+        dask.config.set({"logging.distributed": "error"})
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
         self.client = Client(LocalCluster(processes=True, memory_limit=None))
-        
-        
+
     def backup(self):
         """
         Creates a backup copy of the current dataframe
@@ -54,13 +54,13 @@ class DaskBench(AbstractAlgorithm):
         """
         Replace the internal dataframe with the backup
         """
-        self.df_ = self.backup_.copy() # type: ignore
+        self.df_ = self.backup_.copy()  # type: ignore
 
-    def load_from_pandas(self, df : pd.DataFrame)-> None :
+    def load_from_pandas(self, df: pd.DataFrame) -> None:
         """
         Loads data from a pandas dataframe
         """
-        self.df_ = dd.from_pandas(df, npartitions=1) 
+        self.df_ = dd.from_pandas(df, npartitions=1)
 
     def done(self):
         self.df_.compute()
@@ -71,7 +71,7 @@ class DaskBench(AbstractAlgorithm):
         Returns the internal dataframe as a pandas dataframe
         """
         return self.df_.compute()
-    
+
     @timing
     def load_dataset(self, ds: Dataset, conn=None, **kwargs):
         """
@@ -95,7 +95,7 @@ class DaskBench(AbstractAlgorithm):
             self.read_hdf5(path, **kwargs)
         elif format == "xml":
             self.read_xml(path, **kwargs)
-        
+
         self.df_ = self.df_.persist()
         return self.df_
 
@@ -120,7 +120,7 @@ class DaskBench(AbstractAlgorithm):
         """
         self.df_ = dd.read_csv(path, **kwargs)
         return self.df_
-    
+
     def read_hdf5(self, path, **kwargs) -> dd.DataFrame:
         """
         Read a csv file
@@ -128,8 +128,7 @@ class DaskBench(AbstractAlgorithm):
         try:
             self.df_ = dd.read_hdf(path, **kwargs)
         except:
-            keys = list(h5py.File(path, 'r').keys())
-        
+            keys = list(h5py.File(path, "r").keys())
 
     def read_xml(self, path, **kwargs) -> dd.DataFrame:
         """
@@ -225,11 +224,11 @@ class DaskBench(AbstractAlgorithm):
         if columns is None:
             columns = []
         if len(columns) == 0:
-            self.df_ = self.df_.fillna(value)  
+            self.df_ = self.df_.fillna(value)
         else:
             for c in columns:
                 self.df_[c] = self.df_[c].fillna(value)
-        
+
         return self.df_
 
     @timing
@@ -239,9 +238,9 @@ class DaskBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         for c in columns:
-            self.df_[f'{c}_cat'] = self.df_[c].copy()
-            self.df_ = self.df_.categorize(columns=[f'{c}_cat'])
-            self.df_ = dd.get_dummies(self.df_, prefix=c, columns=[f'{c}_cat'])
+            self.df_[f"{c}_cat"] = self.df_[c].copy()
+            self.df_ = self.df_.categorize(columns=[f"{c}_cat"])
+            self.df_ = dd.get_dummies(self.df_, prefix=c, columns=[f"{c}_cat"])
         return self.df_
 
     @timing
@@ -325,8 +324,15 @@ class DaskBench(AbstractAlgorithm):
 
         new_dtypes = df1.dtypes.apply(lambda x: x.name).to_dict()
         res = dd.compute({c: df1[c].isna().any() for c in df1.columns})[0]
-        return [{"col": c, "current_dtype": current_dtypes[c], "suggested_dtype": new_dtypes[c],} 
-                for c in self.df_.columns if (current_dtypes[c] != new_dtypes[c]) and not res[c]]
+        return [
+            {
+                "col": c,
+                "current_dtype": current_dtypes[c],
+                "suggested_dtype": new_dtypes[c],
+            }
+            for c in self.df_.columns
+            if (current_dtypes[c] != new_dtypes[c]) and not res[c]
+        ]
 
     @timing
     def check_allowed_char(self, column, pattern):
@@ -364,7 +370,7 @@ class DaskBench(AbstractAlgorithm):
         column datatype must be datetime
         An example of format is '%m/%d/%Y'
         """
-        self.df_[column] = dd.to_datetime(self.df_[column], errors='coerce')
+        self.df_[column] = dd.to_datetime(self.df_[column], errors="coerce")
         self.df_[column] = self.df_[column].dt.strftime(format)
         return self.df_
 
@@ -455,7 +461,7 @@ class DaskBench(AbstractAlgorithm):
         Delete the rows with null values for all provided Columns
         Columns is a list of column names
         """
-        if columns == 'all':
+        if columns == "all":
             columns = list(self.df_.columns.values)
         self.df_ = self.df_.dropna(subset=columns)
         return self.df_
@@ -518,7 +524,7 @@ class DaskBench(AbstractAlgorithm):
         Calculate the new column col_name by applying
         the function f
         """
-        self.df_[col_name] = self.df_.apply(eval(f), meta=('x', 'f8'), axis=1)
+        self.df_[col_name] = self.df_.apply(eval(f), meta=("x", "f8"), axis=1)
         return self.df_
 
     @timing
@@ -533,11 +539,13 @@ class DaskBench(AbstractAlgorithm):
         """
         if type(left_on) == str:
             left_on = [left_on]
-            right_on = [right_on]   
+            right_on = [right_on]
         for i in range(len(left_on)):
             if self.df_[left_on[i]].dtype != other[right_on[i]].dtype:
-                other[right_on[i]] = other[right_on[i]].astype(self.df_[left_on[i]].dtype)
-                
+                other[right_on[i]] = other[right_on[i]].astype(
+                    self.df_[left_on[i]].dtype
+                )
+
         self.df_ = self.df_.merge(
             other, left_on=left_on, right_on=right_on, how=how, **kwargs
         )
@@ -551,10 +559,10 @@ class DaskBench(AbstractAlgorithm):
         """
         if meta is None:
             return self.df_.groupby(columns).agg(f)
-        
+
         return self.df_.groupby(columns).apply(f, meta=meta)
-        
-        #.apply(eval(f), meta={'x': 'f8', 'y': 'f8'})
+
+        # .apply(eval(f), meta={'x': 'f8', 'y': 'f8'})
 
     @timing
     def categorical_encoding(self, columns):
@@ -603,7 +611,7 @@ class DaskBench(AbstractAlgorithm):
         return self.df_
 
     @timing
-    def edit(self, columns, func, meta=''):
+    def edit(self, columns, func, meta=""):
         """
         Edit the values of the cells in the provided columns using the provided expression
         Columns is a list of column names
@@ -611,7 +619,7 @@ class DaskBench(AbstractAlgorithm):
         if type(func) == str:
             func = eval(func)
         for c in columns:
-            self.df_[c] = self.df_[c].map(func, meta = eval(meta))
+            self.df_[c] = self.df_[c].map(func, meta=eval(meta))
         return self.df_
 
     @timing
@@ -655,15 +663,19 @@ class DaskBench(AbstractAlgorithm):
         Duplicate columns are those which have same values for each row.
         """
         import dask.array as da
-        
+
         def equals(a, b):
             return np.array_equal(a, b)
-        
+
         cols = self.df_.columns.values
-        return [(cols[i], cols[j]) 
-                for i in range(len(cols)) 
-                for j in range(i + 1, len(cols)) 
-                if da.map_blocks(equals, self.df_[cols[i]].values, self.df_[cols[j]].values).all()]
+        return [
+            (cols[i], cols[j])
+            for i in range(len(cols))
+            for j in range(i + 1, len(cols))
+            if da.map_blocks(
+                equals, self.df_[cols[i]].values, self.df_[cols[j]].values
+            ).all()
+        ]
 
     @timing
     def to_csv(self, path=f"/pipeline_output/{name}_loan_output_*.csv", **kwargs):
@@ -671,6 +683,7 @@ class DaskBench(AbstractAlgorithm):
         Export the dataframe in a csv file.
         """
         import os
+
         if not os.path.exists("./pipeline_output"):
             os.makedirs("./pipeline_output")
         self.df_.to_csv(f"/pipeline_output/{self.name}_output.csv", **kwargs)
@@ -690,9 +703,9 @@ class DaskBench(AbstractAlgorithm):
 
     def force_execution(self):
 
-        #self.df_ = optimize(self.df_)
+        # self.df_ = optimize(self.df_)
         self.df_.compute()
-        
+
     @timing
     def set_construtor_args(self, args):
         pass

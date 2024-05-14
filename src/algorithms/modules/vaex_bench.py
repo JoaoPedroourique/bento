@@ -16,11 +16,11 @@ from src.algorithms.algorithm import AbstractAlgorithm
 class VaexBench(AbstractAlgorithm):
     df_: vx.dataframe.DataFrame = None
     backup_: vx.dataframe.DataFrame = None
-    ds_ : Dataset = None
+    ds_: Dataset = None
     name = "vaex"
     pipeline = False
-    
-    def __init__(self, mem: str=None, cpu:int=None, pipeline: bool = False):
+
+    def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
@@ -42,7 +42,7 @@ class VaexBench(AbstractAlgorithm):
         """
         Loads data from a pandas dataframe
         """
-        return self.set_df(vx.from_pandas(df)) 
+        return self.set_df(vx.from_pandas(df))
 
     @timing
     def get_pandas_df(self):
@@ -80,15 +80,15 @@ class VaexBench(AbstractAlgorithm):
         elif format == "excel":
             self.df_ = self.read_excel(path, **kwargs)
         elif format == "hdf5":
-            self.df_ = self.read_hdf5( path, **kwargs)
+            self.df_ = self.read_hdf5(path, **kwargs)
         elif format == "json":
-            self.df_ = self.read_json( path, **kwargs)
+            self.df_ = self.read_json(path, **kwargs)
         elif format == "parquet":
-            self.df_ = self.read_parquet( path, **kwargs)
+            self.df_ = self.read_parquet(path, **kwargs)
         elif format == "sql":
-            self.df_ = self.read_sql( path, conn, **kwargs)
+            self.df_ = self.read_sql(path, conn, **kwargs)
         elif format == "xml":
-            self.df_ = self.read_xml( path, **kwargs)
+            self.df_ = self.read_xml(path, **kwargs)
         return self.df_
 
     def read_json(self, path, **kwargs):
@@ -105,8 +105,8 @@ class VaexBench(AbstractAlgorithm):
         :param path: path of the file to load
         :param kwargs: extra arguments
         """
-        return vx.from_csv_arrow(path, **kwargs)  
-        
+        return vx.from_csv_arrow(path, **kwargs)
+
     def read_xml(self, path, **kwargs):
         """
         Read a xml file
@@ -130,7 +130,7 @@ class VaexBench(AbstractAlgorithm):
         :param kwargs: extra arguments
         """
         return vx.open(path, **kwargs)
-    
+
     def read_hdf5(self, path, **kwargs):
         """
         Read a hdf5 file
@@ -140,9 +140,8 @@ class VaexBench(AbstractAlgorithm):
         try:
             return vx.open(path, **kwargs)
         except:
-            print('Dataset is not column based, it will be opened using pandas api')
+            print("Dataset is not column based, it will be opened using pandas api")
             return vx.from_pandas(pd.read_hdf(path, **kwargs))
-            
 
     def read_sql(self, query, conn, **kwargs):
         """
@@ -162,9 +161,9 @@ class VaexBench(AbstractAlgorithm):
         :param columns columns to use for sorting
         :param ascending if sets to False sorts in descending order (default True)
         """
-        
-        self.df_ = self.df_.sort(columns, ascending = ascending)
-        
+
+        self.df_ = self.df_.sort(columns, ascending=ascending)
+
         return self.df_
 
     @timing
@@ -202,10 +201,12 @@ class VaexBench(AbstractAlgorithm):
         :param columns a dictionary that contains for each column to rename the new name
         """
 
-        assert type(columns) == dict, "Columns parameter must be a dict, formatted as {\"column_name\": \"new_name\"}"
+        assert (
+            type(columns) == dict
+        ), 'Columns parameter must be a dict, formatted as {"column_name": "new_name"}'
 
         for el in columns.items():
-            self.df_.rename(el[0],el[1])
+            self.df_.rename(el[0], el[1])
         return self.df_
 
     @timing
@@ -217,13 +218,17 @@ class VaexBench(AbstractAlgorithm):
         :param separator separator to use
         :param name new column name
         """
-        
+
         assert len(columns) == 2, "Merge is possible only with two columns"
 
         if type(columns) == str:
             columns = [columns]
 
-        self.df_[name] = self.df_[columns[0]].astype(str) + separator + self.df_[columns[1]].astype(str)
+        self.df_[name] = (
+            self.df_[columns[0]].astype(str)
+            + separator
+            + self.df_[columns[1]].astype(str)
+        )
         return self.df_
 
     @timing
@@ -235,11 +240,11 @@ class VaexBench(AbstractAlgorithm):
         """
         if columns is None:
             columns = self.get_columns()
-        
+
         if func:
             value = eval(value)
-        
-        self.df_ =   self.df_.fillna(value=value, column_names=columns)
+
+        self.df_ = self.df_.fillna(value=value, column_names=columns)
         return self.df_
 
     @timing
@@ -251,7 +256,7 @@ class VaexBench(AbstractAlgorithm):
         """
         if type(columns) == str:
             columns = [columns]
-        
+
         one_hot_encoder = vaex.ml.OneHotEncoder(features=columns)
         self.df_ = one_hot_encoder.fit_transform(self.df_)
         return self.df_
@@ -263,9 +268,9 @@ class VaexBench(AbstractAlgorithm):
         null value in the provided column.
         :param column column to explore
         """
-        if column == 'all':
+        if column == "all":
             column = self.get_columns()
-            
+
         return self.df_[self.df_[column] != self.df_[column]]
 
     @timing
@@ -281,7 +286,9 @@ class VaexBench(AbstractAlgorithm):
         return self.df_[self.df_[column].str.contains(pattern)]
 
     @timing
-    def locate_outliers(self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs):
+    def locate_outliers(
+        self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs
+    ):
         """
         Returns the rows of the dataframe that have values
         in the provided column lower or higher than the values
@@ -290,14 +297,16 @@ class VaexBench(AbstractAlgorithm):
         :param lower_quantile lower quantile (default 0.1)
         :param upper_quantile upper quantile (default 0.99)
         """
-        if column == 'all':
+        if column == "all":
             column = self.get_columns()
-        cols = [c for c in column if self.df_[c].dtype in ['int64', 'float64']]
-        q_low = self.df_.percentile_approx(cols, (lower_quantile*100))
-        q_hi  = self.df_.percentile_approx(cols, (upper_quantile*100))
-        #print(q_low, q_hi)
-        return self.df_[(self.df_[column] < q_low.max()) | (self.df_[column] > q_hi.min())]
-    
+        cols = [c for c in column if self.df_[c].dtype in ["int64", "float64"]]
+        q_low = self.df_.percentile_approx(cols, (lower_quantile * 100))
+        q_hi = self.df_.percentile_approx(cols, (upper_quantile * 100))
+        # print(q_low, q_hi)
+        return self.df_[
+            (self.df_[column] < q_low.max()) | (self.df_[column] > q_hi.min())
+        ]
+
     @timing
     def get_columns_types(self):
         """
@@ -316,13 +325,15 @@ class VaexBench(AbstractAlgorithm):
         For example  {'col_name': 'int8'}
         """
 
-        assert type(dtypes) == dict, "dtypes parameter must be a dict, formatted like {'col_name': 'type'} "
+        assert (
+            type(dtypes) == dict
+        ), "dtypes parameter must be a dict, formatted like {'col_name': 'type'} "
         for col, dtype in dtypes.items():
-            if str(self.df_[col].dtype) == 'time32[s]':
-                    self.df_[col] = self.df_[col].astype(str)
-                    self.df_[col] = "1970-01-01 " + self.df_[col]
-                    self.df_[col] = self.df_[col].astype('datetime64')
-            
+            if str(self.df_[col].dtype) == "time32[s]":
+                self.df_[col] = self.df_[col].astype(str)
+                self.df_[col] = "1970-01-01 " + self.df_[col]
+                self.df_[col] = self.df_[col].astype("datetime64")
+
             elif str(self.df_[col].dtype) == dtype:
                 continue
             else:
@@ -330,7 +341,7 @@ class VaexBench(AbstractAlgorithm):
         return self.df_
 
     @timing
-    #MANCANO I PERCENTILI
+    # MANCANO I PERCENTILI
     def get_stats(self):
         """
         Returns dataframe statistics.
@@ -339,13 +350,12 @@ class VaexBench(AbstractAlgorithm):
         """
         df_copy = self.df_.copy()
         for c in self.get_columns():
-            if str(df_copy[c].dtype) in {'date32[day]', 'time32[s]'} :
+            if str(df_copy[c].dtype) in {"date32[day]", "time32[s]"}:
                 df_copy[c] = df_copy[c].astype(str)
-        
-        
+
         return df_copy.describe(strings=False)
 
-    #SOLUTION NOT FOUND
+    # SOLUTION NOT FOUND
     @timing
     def find_mismatched_dtypes(self):
         """
@@ -370,8 +380,8 @@ class VaexBench(AbstractAlgorithm):
         """
         return self.df_[column].str.contains(pattern)
 
-    #Vaex non contiene questa funzione.
-    #Soluzione proposta dagli sviluppatori di vaex non performante
+    # Vaex non contiene questa funzione.
+    # Soluzione proposta dagli sviluppatori di vaex non performante
     # L'esecuzione è in-memory, quindi tutti i benefici di vaex diventano inutili
     # https://github.com/vaexio/vaex/pull/1623
     # Nel caso di specie, non potrà essere applicato perchè il count supera il limite di storage int64 python
@@ -379,7 +389,7 @@ class VaexBench(AbstractAlgorithm):
     #     """
     #     Drop duplicate rows.
     #     """
-        
+
     #     self.df_ = vx.from_pandas(self.df_.to_pandas_df().drop_duplicates())
     #     return self.df_
     @timing
@@ -389,14 +399,20 @@ class VaexBench(AbstractAlgorithm):
         # This is a non trivial problem actually and we do not have a official implementation of this yet.
         try:
             columns = [self.df_[c] for c in self.df_.get_column_names()]
-            self.df_['hashed'] = self.df_.apply(lambda *row: hash(str(row)), arguments=columns)
-            unique_hashes = self.df_['hashed'].unique()
-            self.df_ = self.df_.filter(self.df_['hashed'].isin(unique_hashes))
-            self.df_ = self.df_.drop('hashed')
+            self.df_["hashed"] = self.df_.apply(
+                lambda *row: hash(str(row)), arguments=columns
+            )
+            unique_hashes = self.df_["hashed"].unique()
+            self.df_ = self.df_.filter(self.df_["hashed"].isin(unique_hashes))
+            self.df_ = self.df_.drop("hashed")
         except Exception:
-            print("Warning: drop_duplicates is not implemented for this backend, falling back to pandas")
-            self.df_ = vx.from_pandas(self.df_.to_pandas_df().drop_duplicates(subset=columns))
-            
+            print(
+                "Warning: drop_duplicates is not implemented for this backend, falling back to pandas"
+            )
+            self.df_ = vx.from_pandas(
+                self.df_.to_pandas_df().drop_duplicates(subset=columns)
+            )
+
         return self.df_
 
     @timing
@@ -409,12 +425,12 @@ class VaexBench(AbstractAlgorithm):
         :param column column to format
         :param str_date_time_format datetime formatting string
         """
-        #from datetime import datetime
+        # from datetime import datetime
         # converting col to pandas
-        #pandas_df = self.df_.to_pandas_df()
+        # pandas_df = self.df_.to_pandas_df()
         # converting col to datetime
-        #print("Warning: change_date_time_format is not implemented for this backend, falling back to pandas")
-        
+        # print("Warning: change_date_time_format is not implemented for this backend, falling back to pandas")
+
         # column_values = self.df_[column].astype(str).values
         # formatted_values = []
         # for v in column_values:
@@ -424,16 +440,18 @@ class VaexBench(AbstractAlgorithm):
         #         formatted_values.append(datetime.datetime.strptime(str(v), format))
         # print(formatted_values)
         from dateutil import parser
-        
-        
-        self.df_[column] = self.df_[column].apply(lambda x: parser.parse(str(x)) if x not in ['NaT', 'nan', '', None] else '')
+
+        self.df_[column] = self.df_[column].apply(
+            lambda x: parser.parse(str(x)) if x not in ["NaT", "nan", "", None] else ""
+        )
         # port to string with the new format
-        self.df_[column] = self.df_[column].apply(lambda x: x.strftime(format) if x not in ['NaT', 'nan', '', None] else '')
-        #pandas_df[column] = pd.to_datetime(pandas_df[column], errors='ignore', format=format)
-        #self.df_ = vx.from_pandas(pandas_df)
+        self.df_[column] = self.df_[column].apply(
+            lambda x: x.strftime(format) if x not in ["NaT", "nan", "", None] else ""
+        )
+        # pandas_df[column] = pd.to_datetime(pandas_df[column], errors='ignore', format=format)
+        # self.df_ = vx.from_pandas(pandas_df)
         return self.df_
-        
-        
+
     @timing
     def set_header_case(self, case):
         """
@@ -443,22 +461,22 @@ class VaexBench(AbstractAlgorithm):
         """
         col = self.get_columns()
         if case == "lower":
-            d = {el : el.lower() for el in col}
+            d = {el: el.lower() for el in col}
             self.rename_columns(d)
         elif case == "upper":
-            d = {el : el.upper() for el in col}
+            d = {el: el.upper() for el in col}
             self.rename_columns(d)
         elif case == "title":
-            d = {el : el.title() for el in col}
+            d = {el: el.title() for el in col}
             self.rename_columns(d)
         elif case == "capitalize":
-            d = {el : el.capitalize() for el in col}
+            d = {el: el.capitalize() for el in col}
             self.rename_columns(d)
         elif case == "swapcase":
-            d = {el : el.swapcase() for el in col}
+            d = {el: el.swapcase() for el in col}
             self.rename_columns(d)
         return self.df_
-                
+
     @timing
     def set_content_case(self, columns, case):
         """
@@ -488,8 +506,8 @@ class VaexBench(AbstractAlgorithm):
                 self.df_[column] = self.df_[column].str.swapcase()
         return self.df_
 
-    #Realizzata con virtual column.
-    #Espressione valutata on-fly - non occupa memoria
+    # Realizzata con virtual column.
+    # Espressione valutata on-fly - non occupa memoria
     @timing
     def duplicate_columns(self, columns):
         """
@@ -502,10 +520,10 @@ class VaexBench(AbstractAlgorithm):
             columns = [columns]
 
         for column in columns:
-            self.df_.add_virtual_column(column + "_duplicate",self.df_.column)
+            self.df_.add_virtual_column(column + "_duplicate", self.df_.column)
         return self.df_
 
-    #Operazioni di PIVOT - UNPIVOT non supportate in VAEX
+    # Operazioni di PIVOT - UNPIVOT non supportate in VAEX
     @timing
     def pivot(self, index, columns, values, aggfunc):
         """
@@ -518,23 +536,35 @@ class VaexBench(AbstractAlgorithm):
                {"col1": "sum"}
         """
         import itertools
+
         try:
             df_copy = self.df_.copy()
             agg = {c: aggfunc(v) for c, v in itertools.product(columns, values)}
             if len(index) > 1:
-                print('multi-index')
-                df_copy['index'] = df_copy.apply(lambda *row: str(row), arguments=[df_copy[c] for c in index])
-                index = 'index'
+                print("multi-index")
+                df_copy["index"] = df_copy.apply(
+                    lambda *row: str(row), arguments=[df_copy[c] for c in index]
+                )
+                index = "index"
 
             return df_copy.groupby(by=index).agg(agg)
 
         except Exception:
             import pandas as pd
-            print("Warning: pivot is not implemented for this backend, falling back to pandas")
-            pivot = pd.pivot_table(self.df_.to_pandas_df(), index=index, columns=columns, values=values, aggfunc=aggfunc)
+
+            print(
+                "Warning: pivot is not implemented for this backend, falling back to pandas"
+            )
+            pivot = pd.pivot_table(
+                self.df_.to_pandas_df(),
+                index=index,
+                columns=columns,
+                values=values,
+                aggfunc=aggfunc,
+            )
             return vx.from_pandas(pivot.reset_index())
-    
-    #Operazioni di PIVOT - UNPIVOT non supportate in VAEX
+
+    # Operazioni di PIVOT - UNPIVOT non supportate in VAEX
     @timing
     def unpivot(self, columns, var_name, val_name):
         """
@@ -550,12 +580,12 @@ class VaexBench(AbstractAlgorithm):
         Columns is a list of column names
         :param columns columns to check
         """
-        if columns == 'all':
+        if columns == "all":
             columns = self.get_columns()
-            
+
         self.df_ = self.df_.dropna(column_names=columns)
         return self.df_
-  
+
     @timing
     def string_to_date(self, columns):  # sourcery skip: extract-method
         """
@@ -565,24 +595,49 @@ class VaexBench(AbstractAlgorithm):
         if type(columns) == str:
             columns = [columns]
 
-        map_month  = {"Gennaio" : "01", "Febbraio" : "02", "Marzo" : "03","Aprile" : "04", 
-                        "Maggio" : "05", "Giugno" : "06", "Luglio" : "07", "Agosto" : "08", 
-                        "Settembre" : "09", "Ottobre" : "10", "Novembre" : "11", "Dicembre" : "12"}
+        map_month = {
+            "Gennaio": "01",
+            "Febbraio": "02",
+            "Marzo": "03",
+            "Aprile": "04",
+            "Maggio": "05",
+            "Giugno": "06",
+            "Luglio": "07",
+            "Agosto": "08",
+            "Settembre": "09",
+            "Ottobre": "10",
+            "Novembre": "11",
+            "Dicembre": "12",
+        }
 
-        map_day = {"1":"01","2":"02","3":"03","4":"04","5":"05","6":"06","7":"07","8":"08","9":"09"}
+        map_day = {
+            "1": "01",
+            "2": "02",
+            "3": "03",
+            "4": "04",
+            "5": "05",
+            "6": "06",
+            "7": "07",
+            "8": "08",
+            "9": "09",
+        }
 
         for col in columns:
-            
-            self.split(col, " ", 2,["day", "month" , "year"])
 
-            self.set_content_case(['month'], 'title')
+            self.split(col, " ", 2, ["day", "month", "year"])
 
-            self.df_ = self.replace(["month"], map_month,0,False)
-            self.df_ = self.replace(["day"], map_day,0,False)
-            self.df_[col] = (self.df_["year"] + "-" + self.df_["month"] + "-" + self.df_["day"]).astype("datetime64").dt.date
+            self.set_content_case(["month"], "title")
+
+            self.df_ = self.replace(["month"], map_month, 0, False)
+            self.df_ = self.replace(["day"], map_day, 0, False)
+            self.df_[col] = (
+                (self.df_["year"] + "-" + self.df_["month"] + "-" + self.df_["day"])
+                .astype("datetime64")
+                .dt.date
+            )
 
             self.delete_columns(["day", "month", "year"])
-        
+
         return self.df_
 
     @timing
@@ -596,14 +651,16 @@ class VaexBench(AbstractAlgorithm):
         :param splits number of splits, limit the number of splits
         :param col_names name of the new columns
         """
-        
-        assert type(col_names) == list, "Columns parameter must be a list" 
 
-        self.df_['split'] = self.df_[column].str.split(sep, splits)
+        assert type(col_names) == list, "Columns parameter must be a list"
+
+        self.df_["split"] = self.df_[column].str.split(sep, splits)
         for el in col_names:
-            self.df_[el] = (self.df_.func.split_list(self.df_['split'], col_names.index(el)))
-        
-        self.delete_columns('split')
+            self.df_[el] = self.df_.func.split_list(
+                self.df_["split"], col_names.index(el)
+            )
+
+        self.delete_columns("split")
 
         return self.df_
 
@@ -635,11 +692,16 @@ class VaexBench(AbstractAlgorithm):
             columns = [columns]
 
         for column in columns:
-            self.df_[column] = self.df_[column].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+            self.df_[column] = (
+                self.df_[column]
+                .str.normalize("NFKD")
+                .str.encode("ascii", errors="ignore")
+                .str.decode("utf-8")
+            )
         return self.df_
 
-    #Vaex has an index not modifiable
-    #This index is useful in join or in group by operation   
+    # Vaex has an index not modifiable
+    # This index is useful in join or in group by operation
     @timing
     def set_index(self, column):
         """
@@ -647,22 +709,22 @@ class VaexBench(AbstractAlgorithm):
         :param column to use as index
         """
         pass
-    
+
     @timing
-    def change_num_format(self, formats:dict):
+    def change_num_format(self, formats: dict):
         """
         Round one ore more columns to a variable number of decimal places.
         formats is a dictionary with the column names as key and the number of decimal places as value.
         :param formats new column(s) format(s).
                E.g. {'col_name' : 2}
         """
-        
+
         for el in formats.items():
             self.df_[el[0]] = self.df_[el[0]].round(el[1])
         return self.df_
 
     @timing
-    def calc_column(self, col_name, columns:list, f):
+    def calc_column(self, col_name, columns: list, f):
         """
         Calculate the new column col_name by applying
         the function f to the whole dataframe.
@@ -674,12 +736,12 @@ class VaexBench(AbstractAlgorithm):
 
         if type(f) == str:
             f = eval(f)
-            
+
         self.df_[col_name] = self.df_.apply(f, arguments=columns)
         return self.df_
 
     @timing
-    def join(self, other, left_on=None, right_on=None, how='inner', **kwargs):
+    def join(self, other, left_on=None, right_on=None, how="inner", **kwargs):
         # sourcery skip: extract-method
         """
         Joins current dataframe (left) with a new one (right).
@@ -693,17 +755,31 @@ class VaexBench(AbstractAlgorithm):
         :param how type of join (inner, left, right, outer)
         :param kwargs extra parameters
         """
-        assert how != 'outer', "Outer join is not supported"
+        assert how != "outer", "Outer join is not supported"
         if type(left_on) == str:
-            self.df_.join(other, left_on=left_on, right_on=right_on, how=how, inplace=True)
+            self.df_.join(
+                other, left_on=left_on, right_on=right_on, how=how, inplace=True
+            )
         if (type(left_on) == list) and (type(right_on) == list):
-            assert len(left_on) == len(right_on), "Left and right keys must have the same length"
-            self.df_['mergingcol'] = self.df_.apply(lambda *x: f'{x}', arguments=[self.df_[c] for c in left_on])
-            other['mergingcol'] = other.apply(lambda *x: f'{x}', arguments=[other[c] for c in right_on])
+            assert len(left_on) == len(
+                right_on
+            ), "Left and right keys must have the same length"
+            self.df_["mergingcol"] = self.df_.apply(
+                lambda *x: f"{x}", arguments=[self.df_[c] for c in left_on]
+            )
+            other["mergingcol"] = other.apply(
+                lambda *x: f"{x}", arguments=[other[c] for c in right_on]
+            )
             self.delete_columns(left_on)
-            self.df_.join(other, left_on='mergingcol', right_on='mergingcol', how=how, inplace=True)
-            self.df_= self.delete_columns(['mergingcol'])
-            
+            self.df_.join(
+                other,
+                left_on="mergingcol",
+                right_on="mergingcol",
+                how=how,
+                inplace=True,
+            )
+            self.df_ = self.delete_columns(["mergingcol"])
+
         return self.df_
 
     @timing
@@ -714,8 +790,8 @@ class VaexBench(AbstractAlgorithm):
         :param columns columns to use for group by
         :param f aggregation function
         """
-        
-        return  self.df_.groupby(columns, agg=f)
+
+        return self.df_.groupby(columns, agg=f)
 
     @timing
     def categorical_encoding(self, columns):
@@ -725,8 +801,8 @@ class VaexBench(AbstractAlgorithm):
         Columns is a list of column names
         :param columns columns to encode
         """
-        #label_encoder = vaex.ml.LabelEncoder(features=columns)
-        #self.df_ = label_encoder.fit_transform(self.df_)
+        # label_encoder = vaex.ml.LabelEncoder(features=columns)
+        # self.df_ = label_encoder.fit_transform(self.df_)
         for c in columns:
             self.df_ = self.df_.ordinal_encode(c)
         return self.df_
@@ -741,7 +817,7 @@ class VaexBench(AbstractAlgorithm):
         :param frac percentage or exact number of samples to take
         :param num if set to True uses frac as a percentage, otherwise frac is used as a number
         """
-        return self.df_.sample(frac=num/100) if frac else self.df_.sample(n=num)
+        return self.df_.sample(frac=num / 100) if frac else self.df_.sample(n=num)
 
     @timing
     def append(self, other, ignore_index=False):
@@ -753,7 +829,7 @@ class VaexBench(AbstractAlgorithm):
         :param ignore_index if set to True reset row indices
         ignore_index is set to False by default: Vaex does not mantain index on rows
         """
-        
+
         return self.df_.concat(other)
 
     @timing
@@ -774,15 +850,23 @@ class VaexBench(AbstractAlgorithm):
 
         for col in columns:
             if type(to_replace) in [int, float]:
-                self.df_[col] = self.df_.func.where(self.df_[col] == to_replace, value, self.df_[col])
+                self.df_[col] = self.df_.func.where(
+                    self.df_[col] == to_replace, value, self.df_[col]
+                )
             elif type(to_replace) == str:
-                self.df_[col] = self.df_[col].str.replace(to_replace, value, regex=regex)
-            elif type (to_replace) == dict:
-                for k,v in to_replace.items():
-                    self.df_[col] = self.df_.func.where(self.df_[col] == k, v, self.df_[col])
+                self.df_[col] = self.df_[col].str.replace(
+                    to_replace, value, regex=regex
+                )
+            elif type(to_replace) == dict:
+                for k, v in to_replace.items():
+                    self.df_[col] = self.df_.func.where(
+                        self.df_[col] == k, v, self.df_[col]
+                    )
             elif type(to_replace) == list:
                 for el in to_replace:
-                    self.df_[col] = self.df_.func.where(self.df_[col] == el, value, self.df_[col])
+                    self.df_[col] = self.df_.func.where(
+                        self.df_[col] == el, value, self.df_[col]
+                    )
 
         return self.df_
 
@@ -796,15 +880,15 @@ class VaexBench(AbstractAlgorithm):
         """
         if type(columns) == str:
             columns = [columns]
-        
+
         for col in columns:
             if type(func) == str:
                 func = eval(func)
-            
+
             self.df_[col] = self.df_[col].apply(func)
         return self.df_
 
-    #Data are immutable in vaex
+    # Data are immutable in vaex
     @timing
     def set_value(self, index, column, value):
         """
@@ -824,7 +908,7 @@ class VaexBench(AbstractAlgorithm):
         :param min min value
         :param max max value
         """
-        scaler = vaex.ml.MinMaxScaler(features=columns, feature_range=(min,max))
+        scaler = vaex.ml.MinMaxScaler(features=columns, feature_range=(min, max))
         return scaler.fit_transform(self.df_)
 
     @timing
@@ -841,7 +925,7 @@ class VaexBench(AbstractAlgorithm):
 
         for col in columns:
             self.df_[col] = self.df_[col].round(n)
-        
+
         return self.df_
 
     @timing
@@ -851,12 +935,14 @@ class VaexBench(AbstractAlgorithm):
         Duplicate columns are those which have same values for each row.
         """
         cols = self.get_columns()
-        
-        return [(cols[i], cols[j])
-                for i in range(len(cols))
-                for j in range(i + 1, len(cols))
-                if self.df_[cols[i]] == self.df_[cols[j]]]
-        
+
+        return [
+            (cols[i], cols[j])
+            for i in range(len(cols))
+            for j in range(i + 1, len(cols))
+            if self.df_[cols[i]] == self.df_[cols[j]]
+        ]
+
     @timing
     def to_csv(self, path=f"./pipeline_output/{name}_loan_output.csv", **kwargs):
         """
@@ -865,20 +951,21 @@ class VaexBench(AbstractAlgorithm):
         :param kwargs extra parameters
         """
         import os
+
         if not os.path.exists("./pipeline_output"):
             os.makedirs("./pipeline_output")
-        
+
         self.df_.export(f"./pipeline_output/{self.name}_output.csv", progress=True)
-        
+
     @timing
     def to_parquet(self, path="./pipeline_output/vaex_loan_output.parquet", **kwargs):
         self.df_.export(path, progress=True)
 
     @timing
     def query(self, query, inplace=False):
-        #Supponendo che la query sia ben definita con () per delimitare le priorità, questo metodo ritorna il risultato corretto
+        # Supponendo che la query sia ben definita con () per delimitare le priorità, questo metodo ritorna il risultato corretto
         # (self.df_.col1 > 1) & (self.df_.col2 < 10)
-        #Il metodo filter valuta una espressione alla volta..
+        # Il metodo filter valuta una espressione alla volta..
         """
         Queries the dataframe and returns the corresponding
         result set.
@@ -891,12 +978,11 @@ class VaexBench(AbstractAlgorithm):
             return self.df_
 
         return self.df_.filter(query)
-    
 
-    #METODO UTILE per la funzione append
+    # METODO UTILE per la funzione append
     @timing
     def extract(self):
-        '''Return a DataFrame containing only the filtered rows.
+        """Return a DataFrame containing only the filtered rows.
 
         {note_copy}
 
@@ -907,7 +993,7 @@ class VaexBench(AbstractAlgorithm):
         For the returned df, len(df) == df.length_original() == df.length_unfiltered()
 
         :rtype: DataFrame
-        '''
+        """
         self.df_ = self.df_.trim()
         if self.df_.filtered:
             self.df_._push_down_filter()
@@ -917,18 +1003,18 @@ class VaexBench(AbstractAlgorithm):
     @vx.register_function(on_expression=True)
     def split_list(x, i):
         return np.array([el[i] for el in x], dtype=str)
-    
+
     def backup(self):
         pass
-    
+
     def drop_by_pattern(self, column, pattern):
         pass
-    
+
     def force_execution(self):
         return self.df_.execute()
-    
+
     def restore(self):
         pass
-    
+
     def set_construtor_args(self, **kwargs):
         pass

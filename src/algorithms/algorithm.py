@@ -3,11 +3,12 @@ import abc
 
 from src.datasets.dataset import Dataset
 
+
 class AbstractAlgorithm(abc.ABC):
     name: str
     constructor_args: dict
-    ds_ : Dataset
-    
+    ds_: Dataset
+
     @property
     def df(self):
         """
@@ -594,7 +595,7 @@ class AbstractAlgorithm(abc.ABC):
         :return: subset of the dataframe that correspond to the selection conditions
         """
         pass
-    
+
     @abc.abstractmethod
     def set_construtor_args(self, **kwargs):
         """

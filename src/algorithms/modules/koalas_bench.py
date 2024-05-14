@@ -1,11 +1,11 @@
-
 import contextlib
 import os
 
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-warnings.simplefilter(action='ignore', category=UserWarning)
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+warnings.simplefilter(action="ignore", category=UserWarning)
 import re
 from typing import Union
 
@@ -21,34 +21,44 @@ from pyspark.sql import SparkSession
 from src.algorithms.algorithm import AbstractAlgorithm
 
 
-
 class KoalasBench(AbstractAlgorithm):
     df_: Union[DataFrame, Series]
     backup_: Union[DataFrame, Series]
-    ds_ : Dataset = None
+    ds_: Dataset = None
     name = "koalas"
-    
-    def __init__(self, conf=None, master="", app_name="", jarPath=None, mem: str = None, cpu: int = None, **kwargs):
+
+    def __init__(
+        self,
+        conf=None,
+        master="",
+        app_name="",
+        jarPath=None,
+        mem: str = None,
+        cpu: int = None,
+        **kwargs
+    ):
 
         self.mem_ = mem
         self.cpu_ = cpu
         import sys
-        os.environ['PYSPARK_PYTHON'] = sys.executable
-        os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
-    
+
+        os.environ["PYSPARK_PYTHON"] = sys.executable
+        os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+
         if conf is None:
             conf = {}
-        
+
         if type(conf) is str:
             import json
+
             conf = json.loads(conf)
             print(type(conf))
-        
+
         self.c = SparkConf()
         print(conf)
         for k in conf:
             self.c.set(k, conf[k])
-       
+
         print(conf)
         self.sparkSession = None
         if len(master) > 0:
@@ -62,7 +72,7 @@ class KoalasBench(AbstractAlgorithm):
             self.sparkSession = (
                 SparkSession.builder.appName(app_name).config(conf=self.c).getOrCreate()
             )
-        
+
         """
         In this way koalas is imported by considering 
         the custom SparkConf
@@ -70,10 +80,10 @@ class KoalasBench(AbstractAlgorithm):
         global ks
         import databricks.koalas as ks
 
-
-    @timing        
+    @timing
     def get_pandas_df(self):
         return self.df_.to_pandas()
+
     @timing
     def load_from_pandas(self, df):
         self.df_ = ks.from_pandas(df)
@@ -83,13 +93,13 @@ class KoalasBench(AbstractAlgorithm):
         Creates a backup copy of the current dataframe
         """
         self.backup_ = self.df_.copy()
-        
+
     def restore(self):
         """
         Replace the internal dataframe with the backup
         """
         self.df_ = self.backup_.copy()
-    
+
     @timing
     def load_dataset(self, ds: Dataset, conn=None, **kwargs):
         """
@@ -98,7 +108,7 @@ class KoalasBench(AbstractAlgorithm):
         self.ds_ = ds
         path = ds.dataset_attribute.path
         format = ds.dataset_attribute.type
-        
+
         if format == "csv":
             self.df_ = self.read_csv(path, **kwargs)
         elif format == "excel":
@@ -112,7 +122,7 @@ class KoalasBench(AbstractAlgorithm):
 
         elif format == "xml":
             self.df_ = self.read_xml(path, **kwargs)
-            
+
         if "partition_col" in kwargs:
             self.df_ = self.df_.set_index(kwargs["partition_col"])
         return self.df_
@@ -191,7 +201,7 @@ class KoalasBench(AbstractAlgorithm):
         """
         self.df_ = self.df_.drop(columns=columns)
         return self.df_
-    
+
     @timing
     def rename_columns(self, columns):
         """
@@ -314,9 +324,15 @@ class KoalasBench(AbstractAlgorithm):
                 df2[c] = ks.to_numeric(df2[c])
         new_dtypes = df2.dtypes.apply(lambda x: x.name).to_dict()
 
-        return [{"col": k, "current_dtype": current_dtypes[k], "suggested_dtype": new_dtypes[k],} 
-                for k in current_dtypes.keys() 
-                if (new_dtypes[k] != current_dtypes[k]) and (not df2[k].isna().any())]
+        return [
+            {
+                "col": k,
+                "current_dtype": current_dtypes[k],
+                "suggested_dtype": new_dtypes[k],
+            }
+            for k in current_dtypes.keys()
+            if (new_dtypes[k] != current_dtypes[k]) and (not df2[k].isna().any())
+        ]
 
     @timing
     def check_allowed_char(self, column, pattern):
@@ -549,9 +565,7 @@ class KoalasBench(AbstractAlgorithm):
         if frac:
             return self.df_.sample(frac=num / 100)
         f = num / len(self.df_)
-        print(
-            "warning koalas do not support exact num sample, only frac is supported"
-        )
+        print("warning koalas do not support exact num sample, only frac is supported")
         return self.df_.sample(frac=f)
 
     @timing
@@ -579,13 +593,12 @@ class KoalasBench(AbstractAlgorithm):
         return self.df_
 
     @timing
-    def edit(self, columns, func:str, rolling:int = 1):
+    def edit(self, columns, func: str, rolling: int = 1):
         """
         Edit the values of the cells in the provided columns using the provided expression
         Columns is a list of column names
         """
-        set_option("compute.ops_on_diff_frames", True) 
-    
+        set_option("compute.ops_on_diff_frames", True)
 
         func = eval(func)
         for c in columns:
@@ -629,10 +642,12 @@ class KoalasBench(AbstractAlgorithm):
         Duplicate columns are those which have same values for each row.
         """
         cols = self.df_.columns.values
-        return [(cols[i], cols[j]) 
-                for i in range(len(cols)) 
-                for j in range(i + 1, len(cols)) 
-                if self.df_[cols[i]].equals(self.df_[cols[j]]).all()]
+        return [
+            (cols[i], cols[j])
+            for i in range(len(cols))
+            for j in range(i + 1, len(cols))
+            if self.df_[cols[i]].equals(self.df_[cols[j]]).all()
+        ]
 
     @timing
     def to_csv(self, path, **kwargs):
@@ -651,13 +666,12 @@ class KoalasBench(AbstractAlgorithm):
         """
         return self.df_.query(query)
 
-    @timing   
+    @timing
     def done(self):
         self.sc.stop()
-    
+
     def force_execution(self):
         self.df_.to_pandas()
 
-    
     def set_construtor_args(self, args):
         return args

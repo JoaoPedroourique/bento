@@ -14,9 +14,9 @@ from src.algorithms.algorithm import AbstractAlgorithm
 class PolarsBench(AbstractAlgorithm):
     df_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
     backup_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
-    ds_ : Dataset = None
+    ds_: Dataset = None
     name = "polars"
-    
+
     def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
         self.mem_ = mem
         self.cpu_ = cpu
@@ -57,7 +57,7 @@ class PolarsBench(AbstractAlgorithm):
         self.ds_ = ds
         path = ds.dataset_attribute.path
         format = ds.dataset_attribute.type
-        
+
         if format == "csv":
             self.df_ = self.read_csv(path, **kwargs)
         elif format == "json":
@@ -70,7 +70,7 @@ class PolarsBench(AbstractAlgorithm):
             self.df_ = self.read_hdf5(path, **kwargs)
         elif format == "xml":
             self.df_ = self.read_xml(path, **kwargs)
-        
+
         self.df_ = self.df_.lazy()
         return self.df_
 
@@ -180,7 +180,7 @@ class PolarsBench(AbstractAlgorithm):
         Columns is a list of column names
         :param columns columns to delete
         """
-        
+
         self.df_ = self.df_.drop(columns)
 
         return self.df_
@@ -219,7 +219,7 @@ class PolarsBench(AbstractAlgorithm):
         if columns is None:
             columns = self.df_.columns
         if func:
-            value=eval(value)
+            value = eval(value)
 
         for c in columns:
             self.df_ = self.df_.with_column(
@@ -243,9 +243,9 @@ class PolarsBench(AbstractAlgorithm):
                     pl.when(pl.col(c) == v).then(1).otherwise(0).alias(c + "_" + str(v))
                 ).lazy()
         print(self.df_.columns)
-        
-        #self.df_ = pl.get_dummies(df = self.df_.collect(), columns=columns).lazy()
-        
+
+        # self.df_ = pl.get_dummies(df = self.df_.collect(), columns=columns).lazy()
+
         return self.df_
 
     @timing
@@ -280,17 +280,16 @@ class PolarsBench(AbstractAlgorithm):
         :param upper_quantile upper quantile (default 0.99)
         """
         numeric = self.df_.collect()
-        if column=='all':
-            column = [c for c in numeric.columns if numeric[c].dtype != 'str']
-        
+        if column == "all":
+            column = [c for c in numeric.columns if numeric[c].dtype != "str"]
 
         lower_quantileDF = numeric[column].quantile(lower_quantile, "linear")
         upper_quantileDF = numeric[column].quantile(upper_quantile, "linear")
-        
+
         for c in column:
             numeric = numeric.with_columns(pl.col(c) < lower_quantileDF[c])
             numeric = numeric.with_columns(pl.col(c) > upper_quantileDF[c])
-        
+
         return numeric
 
     @timing
@@ -314,7 +313,9 @@ class PolarsBench(AbstractAlgorithm):
             if dtypes[c] == "str":
                 self.df_ = self.df_.with_column(pl.col(c).map(str))
             elif dtypes[c] in [pl.Date, pl.Datetime, pl.Time]:
-                self.df_ = self.df_.with_column(pl.col(c).str.strptime(dtypes[c], strict=False).keep_name())
+                self.df_ = self.df_.with_column(
+                    pl.col(c).str.strptime(dtypes[c], strict=False).keep_name()
+                )
             else:
                 self.df_ = self.df_.with_column(pl.col(c).cast(dtypes[c], strict=False))
 
@@ -343,9 +344,11 @@ class PolarsBench(AbstractAlgorithm):
         dfn = self.df_.with_columns(pl.all().cast(pl.Float64, strict=False))
         dfn_s = dfn.schema
 
-        return [{"col": c, "current_dtype": df_s[c], "suggested_dtype": dfn_s[c]} 
-                for c in df_s 
-                if (df_s[c] != dfn_s[c]) and dfn[c].is_not_null().all()]
+        return [
+            {"col": c, "current_dtype": df_s[c], "suggested_dtype": dfn_s[c]}
+            for c in df_s
+            if (df_s[c] != dfn_s[c]) and dfn[c].is_not_null().all()
+        ]
 
     @timing
     def check_allowed_char(self, column, pattern):
@@ -387,16 +390,22 @@ class PolarsBench(AbstractAlgorithm):
         :param column column to format
         :param format datetime formatting string
         """
-       # self.df_ = self.df_.with_column(pl.col(column).cast(pl.Datetime))
+        # self.df_ = self.df_.with_column(pl.col(column).cast(pl.Datetime))
         if str(self.df_.select(column).dtypes[0]) in {
-            'string',
-            'object',
-            'str',
-            'Utf8',
+            "string",
+            "object",
+            "str",
+            "Utf8",
         }:
-            self.df_ = self.df_.with_column(pl.col(column).str.strptime(pl.Date, fmt=format,strict=False).keep_name())
+            self.df_ = self.df_.with_column(
+                pl.col(column)
+                .str.strptime(pl.Date, fmt=format, strict=False)
+                .keep_name()
+            )
         else:
-            self.df_ = self.df_.with_column(pl.col(column).dt.strftime(format).keep_name())
+            self.df_ = self.df_.with_column(
+                pl.col(column).dt.strftime(format).keep_name()
+            )
         return self.df_
 
     @timing
@@ -487,7 +496,7 @@ class PolarsBench(AbstractAlgorithm):
 
         :param columns columns to check
         """
-        if columns == 'all':
+        if columns == "all":
             columns = self.df_.columns
         self.df_ = self.df_.drop_nulls(columns)
         return self.df_
@@ -584,12 +593,12 @@ class PolarsBench(AbstractAlgorithm):
         """
         if type(f) == str:
             f = eval(f)
-            
+
         self.df_ = self.df_.with_column(pl.struct(columns).apply(f).alias(col_name))
-        #new_col = selected.apply(f)
-        #print(new_col.collect())
-        #print(self.df_.with_column(pl.struct(columns).apply(f)).collect())
-        #self.df_ = self.df_.with_column(pl.struct(columns).apply(f).alias(col_name))
+        # new_col = selected.apply(f)
+        # print(new_col.collect())
+        # print(self.df_.with_column(pl.struct(columns).apply(f)).collect())
+        # self.df_ = self.df_.with_column(pl.struct(columns).apply(f).alias(col_name))
         return self.df_
 
     @timing
@@ -634,8 +643,10 @@ class PolarsBench(AbstractAlgorithm):
         :param columns columns to encode
         """
         for c in columns:
-            self.df_ = self.df_.with_columns([pl.col(c).cast(pl.Categorical).cat.set_ordering("physical")])
-    
+            self.df_ = self.df_.with_columns(
+                [pl.col(c).cast(pl.Categorical).cat.set_ordering("physical")]
+            )
+
         return self.df_
 
     @timing
@@ -681,16 +692,16 @@ class PolarsBench(AbstractAlgorithm):
             mapping = dict(zip(to_replace, value))
             for col in columns:
                 self.df_ = self.df_.with_column(
-                        pl.col(col).apply(
-                            lambda x: mapping[x] if x in mapping else x
-                        )
-                    )
+                    pl.col(col).apply(lambda x: mapping[x] if x in mapping else x)
+                )
         else:
             for col in columns:
-                self.df_ = self.df_.with_column(pl.col(col).str.replace(to_replace, value))
-        #print(self.df_.select(pl.struct(col).apply(lambda x: mapping[x])).collect())
-        #self.df_ = self.df_.with_column(pl.struct(columns).apply(lambda x: mapping[x]))
-        #self.df_.select(pl.struct(columns).apply(lambda x: mapping[x]))
+                self.df_ = self.df_.with_column(
+                    pl.col(col).str.replace(to_replace, value)
+                )
+        # print(self.df_.select(pl.struct(col).apply(lambda x: mapping[x])).collect())
+        # self.df_ = self.df_.with_column(pl.struct(columns).apply(lambda x: mapping[x]))
+        # self.df_.select(pl.struct(columns).apply(lambda x: mapping[x]))
         return self.df_
 
     @timing
@@ -704,7 +715,9 @@ class PolarsBench(AbstractAlgorithm):
         """
         func = eval(func)
         for c in columns:
-            self.df_ = self.df_.with_columns([pl.col(c).apply(func, return_dtype=pl.Float64)])
+            self.df_ = self.df_.with_columns(
+                [pl.col(c).apply(func, return_dtype=pl.Float64)]
+            )
         return self.df_
 
     @timing
@@ -756,10 +769,12 @@ class PolarsBench(AbstractAlgorithm):
         """
         cols = self.df_.columns
 
-        return [(cols[i], cols[j])
-                for i in range(len(cols))
-                for j in range(i + 1, len(cols))
-                if self.df_[cols[i]] == self.df_[cols[j]]]
+        return [
+            (cols[i], cols[j])
+            for i in range(len(cols))
+            for j in range(i + 1, len(cols))
+            if self.df_[cols[i]] == self.df_[cols[j]]
+        ]
 
     @timing
     def to_csv(self, path=f"./pipeline_output/{name}_output.csv", **kwargs):
@@ -768,14 +783,14 @@ class PolarsBench(AbstractAlgorithm):
         :param path path on which store the csv
         :param kwargs extra parameters
         """
-        #self.df_ = self.df_.collect()
-        #print(self.df_.collect().head(10))
+        # self.df_ = self.df_.collect()
+        # print(self.df_.collect().head(10))
         try:
             self.df_.collect().write_csv(path, **kwargs)
         except Exception:
             self.df_.collect().to_pandas().to_csv(path, **kwargs)
-          
-    @timing  
+
+    @timing
     def to_parquet(self, path="./pipeline_output/polars_output.parquet", **kwargs):
         """
         Export the dataframe in a parquet file.
@@ -796,13 +811,13 @@ class PolarsBench(AbstractAlgorithm):
             self.df_ = self.df_.filter(query)
             return self.df_
         return self.df_.filter(query)
-        
+
     def force_execution(self):
         self.df_.collect()
-    
-    @timing    
+
+    @timing
     def done(self):
         self.df_.collect()
-        
+
     def set_construtor_args(self, args):
         pass

@@ -10,23 +10,24 @@ import unicodedata
 
 cudf.set_allocator("managed")
 
+
 class RapidsBench(AbstractAlgorithm):
     df_ = None
     backup_ = None
-    ds_ : Dataset = None
+    ds_: Dataset = None
     name = "rapids"
-    
+
     def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
-        
+
     def backup(self):
         """
         Creates a backup copy of the current dataframe
         """
         self.backup = self.df_.copy(deep=True)
-    
+
     def restore(self):
         """
         Replace the internal dataframe with the backup
@@ -58,7 +59,7 @@ class RapidsBench(AbstractAlgorithm):
         self.ds_ = ds
         path = ds.dataset_attribute.path
         format = ds.dataset_attribute.type
-        
+
         if format == "csv":
             self.df_ = self.read_csv(path, **kwargs)
         elif format == "json":
@@ -98,7 +99,7 @@ class RapidsBench(AbstractAlgorithm):
         :param kwargs: extra arguments
         """
         pass
-    
+
     def read_xml(self, path, **kwargs):
         """
         Read a xml file
@@ -106,7 +107,7 @@ class RapidsBench(AbstractAlgorithm):
         :param kwargs: extra arguments
         """
         self.df_ = cudf.from_pandas(pd.read_xml(path, **kwargs))
-        return self.df_        
+        return self.df_
 
     def read_excel(self, path, **kwargs):
         """
@@ -184,7 +185,11 @@ class RapidsBench(AbstractAlgorithm):
         Create a new column with the provided name combining the two provided columns using the provided separator
         Columns is a list of two column names; separator and name are strings
         """
-        self.df_[name] = self.df_[columns[0]].astype(str) + separator + self.df_[columns[1]].astype(str)
+        self.df_[name] = (
+            self.df_[columns[0]].astype(str)
+            + separator
+            + self.df_[columns[1]].astype(str)
+        )
         return self.df_
 
     @timing
@@ -196,7 +201,7 @@ class RapidsBench(AbstractAlgorithm):
         """
         if func:
             value = eval(value)
-        
+
         if columns is None:
             self.df_ = self.df_.fillna(value)
         else:
@@ -214,10 +219,10 @@ class RapidsBench(AbstractAlgorithm):
         dummies = cudf.get_dummies(self.df_[columns], dummy_na=True)
 
         self.df_ = cudf.concat([self.df_.drop(columns=columns), dummies], axis=1)
-        
-        #print(self.df_.columns)
+
+        # print(self.df_.columns)
         return self.df_
-        
+
     @timing
     def locate_null_values(self, column):
         """
@@ -227,7 +232,7 @@ class RapidsBench(AbstractAlgorithm):
         if column == "all":
             column = self.get_columns()
         return self.df_[self.df_[column].isna()]
-    
+
     @timing
     def search_by_pattern(self, column, pattern):
         """
@@ -237,37 +242,42 @@ class RapidsBench(AbstractAlgorithm):
         Pattern could be a regular expression.
         """
         return self.df_[self.df_[column].str.contains(re.compile(pattern))]
-     
-    @timing   
-    def locate_outliers(self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs):
+
+    @timing
+    def locate_outliers(
+        self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs
+    ):
         """
         Returns the rows of the dataframe that have values
         in the provided column lower or higher than the values
         of the lower/upper quantile.
         """
         if column == "all":
-            column = self.df_.select_dtypes(include=['float64', 'int64']).columns
-        
-        q_low = self.df_.quantile(q = [lower_quantile], columns = column, **kwargs)
-        q_hi = self.df_.quantile(q = [upper_quantile], columns = column, **kwargs)
+            column = self.df_.select_dtypes(include=["float64", "int64"]).columns
+
+        q_low = self.df_.quantile(q=[lower_quantile], columns=column, **kwargs)
+        q_hi = self.df_.quantile(q=[upper_quantile], columns=column, **kwargs)
 
         numeric = cudf.DataFrame()
         for c in column:
-            numeric[c] = self.df_[(self.df_[c].fillna(0).values < q_low[c].values) | (self.df_[c].fillna(0).values > q_hi[c].values)][c]
-        
+            numeric[c] = self.df_[
+                (self.df_[c].fillna(0).values < q_low[c].values)
+                | (self.df_[c].fillna(0).values > q_hi[c].values)
+            ][c]
+
         return numeric
-    
+
     @timing
     def get_columns_types(self):
         """
         Returns a dictionary with column types
         """
         return self.df_.dtypes.apply(lambda x: x.name).to_dict()
-    
+
     @timing
     def cast_columns_types(self, dtypes):
         """
-        Cast the data types of the provided columns 
+        Cast the data types of the provided columns
         to the provided new data types.
         dtypes is a dictionary that provide for each
         column to cast the new data type.
@@ -275,12 +285,14 @@ class RapidsBench(AbstractAlgorithm):
         for column, dtype in dtypes.items():
             if column in self.df_.columns:
                 if dtype == "datetime64[ns]":
-                    self.df_[column] = cudf.to_datetime(self.df_[column], format='%Y/%m/%dT%H:%M:%S')
+                    self.df_[column] = cudf.to_datetime(
+                        self.df_[column], format="%Y/%m/%dT%H:%M:%S"
+                    )
                 else:
                     self.df_[column] = self.df_[column].astype(dtype)
 
         return self.df_
-        
+
     @timing
     def get_stats(self):
         """
@@ -289,7 +301,7 @@ class RapidsBench(AbstractAlgorithm):
         Min value, max value, average value, standard deviation, and standard quantiles.
         """
         return self.df_.describe()
-        
+
     def find_mismatched_dtypes(self):
         """
         Returns, if exists, a list of columns with mismatched data types.
@@ -308,14 +320,14 @@ class RapidsBench(AbstractAlgorithm):
 
         return [
             {
-                'col': k,
-                'current_dtype': current_dtypes[k],
-                'suggested_dtype': new_dtypes[k],
+                "col": k,
+                "current_dtype": current_dtypes[k],
+                "suggested_dtype": new_dtypes[k],
             }
             for k in current_dtypes.keys()
             if new_dtypes[k] != current_dtypes[k]
         ]
-        
+
     def check_allowed_char(self, column, pattern):
         """
         Return true if all the values of the provided column
@@ -324,7 +336,7 @@ class RapidsBench(AbstractAlgorithm):
         'ciao' will return true, the string 'ciao123' will return false.
         """
         return self.df_[column].str.contains(re.compile(pattern)).all()
-        
+
     @timing
     def drop_duplicates(self):
         """
@@ -332,7 +344,7 @@ class RapidsBench(AbstractAlgorithm):
         """
         self.df_ = self.df_.drop_duplicates()
         return self.df_
-        
+
     def drop_by_pattern(self, column, pattern):
         """
         Delete the rows where the provided pattern
@@ -341,8 +353,8 @@ class RapidsBench(AbstractAlgorithm):
         matching_rows = self.search_by_pattern(column, pattern)
         self.df_ = self.df_.drop(matching_rows.index)
         return self.df_
-    
-    @timing    
+
+    @timing
     def change_date_time_format(self, column, format):
         """
         Change the date/time format of the provided column
@@ -351,11 +363,11 @@ class RapidsBench(AbstractAlgorithm):
         An example of format is '%m/%d/%Y'
         """
         if self.df_[column].dtype != "datetime64[ns]":
-            self.df_[column] = cudf.to_datetime(self.df_[column], errors='coerce')
+            self.df_[column] = cudf.to_datetime(self.df_[column], errors="coerce")
         self.df_[column] = self.df_[column].dt.strftime(format)
         return self.df_
-      
-    @timing  
+
+    @timing
     def set_header_case(self, case):
         """
         Put dataframe headers in the provided case
@@ -424,7 +436,13 @@ class RapidsBench(AbstractAlgorithm):
         Define the list of columns to be used as values for the variable column,
         the name for variable columns and the one for value column_name
         """
-        self.df_ = cudf.melt(self.df_, id_vars=list(set(list(self.df_.columns.values)) - set(columns)), value_vars=columns, var_name=var_name, value_name=val_name)
+        self.df_ = cudf.melt(
+            self.df_,
+            id_vars=list(set(list(self.df_.columns.values)) - set(columns)),
+            value_vars=columns,
+            var_name=var_name,
+            value_name=val_name,
+        )
         return self.df_
 
     @timing
@@ -433,9 +451,9 @@ class RapidsBench(AbstractAlgorithm):
         Delete the rows with null values for all provided Columns
         Columns is a list of column names
         """
-        if columns == 'all':
+        if columns == "all":
             columns = list(self.df_.columns.values)
-        self.df_.dropna(subset = columns, inplace=True)
+        self.df_.dropna(subset=columns, inplace=True)
         return self.df_
 
     @timing
@@ -464,7 +482,7 @@ class RapidsBench(AbstractAlgorithm):
         Remove diacritics from the provided columns
         Columns is a list of column names
         """
-        
+
         """
         def enc_str(s):
             s = str(s)
@@ -475,19 +493,19 @@ class RapidsBench(AbstractAlgorithm):
         for column in columns:
             self.df_[column] = self.df_[column].apply(enc_str)
         """
-        
+
         print("Not implemented")
         return self.df_
-       
-    @timing 
+
+    @timing
     def set_index(self, column):
         """
         Set the provided column as index
         """
         self.df_ = self.df_.set_index(column)
         return self.df_
-        
-    @timing 
+
+    @timing
     def change_num_format(self, formats):
         """
         Round one ore more columns to a variable number of decimal places.
@@ -495,8 +513,8 @@ class RapidsBench(AbstractAlgorithm):
         """
         self.df_ = self.df_.round(formats)
         return self.df_
-        
-    @timing   
+
+    @timing
     def calc_column(self, col_name, columns, f):
         """
         Calculate the new column col_name by applying
@@ -505,25 +523,27 @@ class RapidsBench(AbstractAlgorithm):
         if type(f) == str:
             f = eval(f)
         try:
-             self.df_[col_name] = f(self.df_[columns])
+            self.df_[col_name] = f(self.df_[columns])
         except Exception as e:
-             self.df_[col_name] = self.df_[columns].to_pandas().apply(f, axis=1)
+            self.df_[col_name] = self.df_[columns].to_pandas().apply(f, axis=1)
         return self.df_
-      
-    @timing  
-    def join(self, other, left_on=None, right_on=None, how='inner', **kwargs):
+
+    @timing
+    def join(self, other, left_on=None, right_on=None, how="inner", **kwargs):
         """
         Joins current dataframe (left) with a new one (right).
         left_on/right_on are the keys on which perform the equijoin
         how is the type of join
         **kwargs: additional parameters
-        
+
         The result is stored in the current dataframe.
         """
-        self.df_ = self.df_.merge(other, left_on=left_on, right_on=right_on, how=how, **kwargs)
+        self.df_ = self.df_.merge(
+            other, left_on=left_on, right_on=right_on, how=how, **kwargs
+        )
         return self.df_
-    
-    @timing    
+
+    @timing
     def groupby(self, columns, f, query=None):
         """
         Aggregate the dataframe by the provided columns
@@ -531,9 +551,9 @@ class RapidsBench(AbstractAlgorithm):
         """
         if query:
             filtered = self.df_.query(query).groupby(columns)
-            return filtered.agg(f)    
+            return filtered.agg(f)
         return self.df_.groupby(columns).agg(f)
-        
+
     @timing
     def categorical_encoding(self, columns):
         """
@@ -541,7 +561,7 @@ class RapidsBench(AbstractAlgorithm):
         Columns is a list of column names
         """
         for column in columns:
-            self.df_[column] = self.df_[column].astype('category')
+            self.df_[column] = self.df_[column].astype("category")
             self.df_[column] = self.df_[column].cat.codes
         return self.df_
 
@@ -553,7 +573,7 @@ class RapidsBench(AbstractAlgorithm):
         - if true, num is the percentage of rows to be returned
         - if false, num is the exact number of rows to be returned
         """
-        return self.df_.sample(frac=num/100) if frac else self.df_.sample(n=num)
+        return self.df_.sample(frac=num / 100) if frac else self.df_.sample(n=num)
 
     @timing
     def append(self, other, ignore_index):
@@ -572,7 +592,9 @@ class RapidsBench(AbstractAlgorithm):
         Regex is a boolean: if true, to_replace is interpreted as a regex
         Columns is a list of column names
         """
-        self.df_[columns] = self.df_[columns].replace(to_replace=to_replace, value=value, regex=regex)
+        self.df_[columns] = self.df_[columns].replace(
+            to_replace=to_replace, value=value, regex=regex
+        )
         return self.df_
 
     @timing
@@ -581,10 +603,10 @@ class RapidsBench(AbstractAlgorithm):
         Edit the values of the cells in the provided columns using the provided expression
         Columns is a list of column names
         """
-        #print("WARNING: don't work with string type columns")
+        # print("WARNING: don't work with string type columns")
         func = eval(func)
         for c in columns:
-            if str(self.df_[c].dtype) in {'object', 'string'}:
+            if str(self.df_[c].dtype) in {"object", "string"}:
                 print("WARNING: don't work with string type columns")
                 continue
             self.df_[c] = self.df_[c].apply(func)
@@ -618,7 +640,7 @@ class RapidsBench(AbstractAlgorithm):
         """
         self.df_[columns] = self.df_[columns].round(n)
         return self.df_
-        
+
     @timing
     def get_duplicate_columns(self):
         """
@@ -632,7 +654,7 @@ class RapidsBench(AbstractAlgorithm):
             for j in range(i + 1, len(cols))
             if self.df_[cols[i]].equals(self.df_[cols[j]])
         ]
-    
+
     @timing
     def to_csv(self, path=f"./pipeline_output/{name}_output.csv", **kwargs):
         """
@@ -642,16 +664,16 @@ class RapidsBench(AbstractAlgorithm):
             self.df_.to_csv(path, **kwargs, chunksize=1000000)
         except Exception as e:
             self.df_.to_pandas().to_csv(path, **kwargs)
-    
+
     @timing
     def to_parquet(self, path="./pipeline_output/rapids_output.parquet", **kwargs):
         """
         Export the dataframe in a parquet file.
         """
         self.df_.to_parquet(path, **kwargs)
-    
+
     @timing
-    def query(self, query, inplace = False):
+    def query(self, query, inplace=False):
         """
         Queries the dataframe and returns the corresponding
         result set.
@@ -664,24 +686,25 @@ class RapidsBench(AbstractAlgorithm):
                 self.df_ = query
                 return self.df_
         except Exception:
-            print("query only supports numeric, datetime, timedelta, or bool dtypes. Not string.")
+            print(
+                "query only supports numeric, datetime, timedelta, or bool dtypes. Not string."
+            )
             pandas_df = self.df_.to_pandas()
             pandas_df = pandas_df.query(query)
             if inplace:
                 self.df_ = cudf.from_pandas(pandas_df)
                 return self.df_
 
-    
     def force_execution(self):
         pass
-    
+
     def restore(self):
         pass
-    
+
     @timing
     def done(self):
         pass
-        
+
     @timing
     def set_construtor_args(self, args):
         pass

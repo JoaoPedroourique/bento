@@ -1,11 +1,12 @@
 from unicodedata import name
 import warnings
 import os
-os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
-os.environ['HADOOP_HOME_WARN_SUPPRESS'] = "1"
-os.environ['HADOOP_ROOT_LOGGER'] = "WARN"
 
-warnings.filterwarnings('ignore')
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
+os.environ["HADOOP_HOME_WARN_SUPPRESS"] = "1"
+os.environ["HADOOP_ROOT_LOGGER"] = "WARN"
+
+warnings.filterwarnings("ignore")
 import re
 from typing import Union
 from haversine import haversine
@@ -19,26 +20,29 @@ from src.algorithms.algorithm import AbstractAlgorithm
 class PandasPysparkBench(AbstractAlgorithm):
     df_: Union[pd.DataFrame, pd.Series] = None
     backup_: Union[pd.DataFrame, pd.Series] = None
-    ds_ : Dataset = None
+    ds_: Dataset = None
     name = "pyspark_pandas"
-    def __init__(self, name:str, mem: str = None, cpu: int = None, pipeline: bool = False):
+
+    def __init__(
+        self, name: str, mem: str = None, cpu: int = None, pipeline: bool = False
+    ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
         self.name = name
         from pyspark.sql import SparkSession
+
         builder = SparkSession.builder.appName("pandas-on-spark")
         builder = builder.config("spark.sql.execution.arrow.pyspark.enabled", "true")
         builder = builder.config("spark.sql.debug.maxToStringFields", 100)
         builder = builder.config("spark.driver.memory", "32g")
         builder = builder.config("spark.driver.maxResultSize", "-1")
-        
+
         # Pandas API on Spark automatically uses this Spark session with the configurations set.
         builder = builder.getOrCreate()
-                
+
         # suppress WARN messages log level OFF
         builder = builder.sparkContext.setLogLevel("OFF")
-        
 
     def backup(self):
         """
@@ -74,7 +78,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         self.ds_ = ds
         path = ds.dataset_attribute.path
         format = ds.dataset_attribute.type
-        
+
         if format == "csv":
             self.df_ = self.read_csv(path, **kwargs)
         elif format == "excel":
@@ -89,7 +93,7 @@ class PandasPysparkBench(AbstractAlgorithm):
             self.df_ = self.read_hdf5(path, **kwargs)
         elif format == "xml":
             self.df_ = self.read_xml(path, **kwargs)
-        
+
         return self.df_
 
     def read_sql(self, query, conn, **kwargs):
@@ -113,7 +117,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         self.df_ = pd.read_csv(path, **kwargs)
         return self.df_
-    
+
     def read_hdf5(self, path, **kwargs):
         """
         Given a connection and a query
@@ -122,9 +126,9 @@ class PandasPysparkBench(AbstractAlgorithm):
         try:
             self.df_ = pd.read_hdf(path, **kwargs)
         except:
-            keys = list(h5py.File(path, 'r').keys())
+            keys = list(h5py.File(path, "r").keys())
             store = pd.HDFStore(path)
-            self.df_ = store[keys[0]]         
+            self.df_ = store[keys[0]]
         return self.df_
 
     def read_xml(self, path, **kwargs):
@@ -248,32 +252,38 @@ class PandasPysparkBench(AbstractAlgorithm):
         on the provided column.
         Pattern could be a regular expression.
         """
-        test = self.df_[column].fillna('').str.contains(re.compile(pattern))
+        test = self.df_[column].fillna("").str.contains(re.compile(pattern))
         return self.df_[test]
 
     @timing
-    def locate_outliers(self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs):
+    def locate_outliers(
+        self, column, lower_quantile=0.1, upper_quantile=0.99, **kwargs
+    ):
         """
         Returns the rows of the dataframe that have values
         in the provided column lower or higher than the values
         of the lower/upper quantile.
-        """       
+        """
         import numpy as np
-        
+
         if column == "all":
             column = self.df_.select_dtypes(include=np.number).columns.tolist()
 
         # Calculate the percentile values for each column
-        percentiles = np.percentile(self.df_[column].values, [(lower_quantile*100), (upper_quantile*100)], axis=0)
-        
+        percentiles = np.percentile(
+            self.df_[column].values,
+            [(lower_quantile * 100), (upper_quantile * 100)],
+            axis=0,
+        )
+
         numpy_array = self.df_[column].values
         lt_values = numpy_array < percentiles[0]
         gt_values = numpy_array > percentiles[1]
-        
+
         # get index of rows with outliers
         index = np.where(lt_values | gt_values)[0]
         return self.df_.iloc[index]
-    
+
     @timing
     def get_columns_types(self):
         """
@@ -321,9 +331,15 @@ class PandasPysparkBench(AbstractAlgorithm):
             .to_dict()
         )
 
-        return [{"col": k, "current_dtype": current_dtypes[k], "suggested_dtype": new_dtypes[k],} 
-                for k in current_dtypes.keys() 
-                if new_dtypes[k] != current_dtypes[k]]
+        return [
+            {
+                "col": k,
+                "current_dtype": current_dtypes[k],
+                "suggested_dtype": new_dtypes[k],
+            }
+            for k in current_dtypes.keys()
+            if new_dtypes[k] != current_dtypes[k]
+        ]
 
     @timing
     def check_allowed_char(self, column, pattern):
@@ -361,7 +377,9 @@ class PandasPysparkBench(AbstractAlgorithm):
         column datatype must be datetime
         An example of format is '%m/%d/%Y'
         """
-        self.df_[column] = pd.to_datetime(self.df_[column], errors='coerce', format=format)
+        self.df_[column] = pd.to_datetime(
+            self.df_[column], errors="coerce", format=format
+        )
         self.df_[column] = self.df_[column].dt.strftime(format)
         return self.df_
 
@@ -424,10 +442,10 @@ class PandasPysparkBench(AbstractAlgorithm):
         and the dictionary to aggregate ("sum", "mean", "count") the values for each column: {"col1": "sum"}
         (see pivot_table in pandas documentation)
         """
-        if (str(type(columns))== 'list') and (len(columns) > 1):
+        if (str(type(columns)) == "list") and (len(columns) > 1):
             print("Only one column can be used as columns")
             columns = [columns[0]]
-        return  self.df_.pivot_table(
+        return self.df_.pivot_table(
             index=index, values=values, columns=columns[0], aggfunc=aggfunc
         ).reset_index()
 
@@ -452,9 +470,9 @@ class PandasPysparkBench(AbstractAlgorithm):
         Delete the rows with null values for all provided Columns
         Columns is a list of column names
         """
-        if columns=="all":
+        if columns == "all":
             columns = self.get_columns()
-        with pd.option_context('compute.ops_on_diff_frames', True):
+        with pd.option_context("compute.ops_on_diff_frames", True):
             self.df_ = self.df_[~self.df_[columns].isnull().any()]
         return self.df_
 
@@ -490,7 +508,6 @@ class PandasPysparkBench(AbstractAlgorithm):
                 .str.normalize("NFKD")
                 .str.encode("ascii", errors="ignore")
                 .str.decode("utf-8")
-                
             )
         return self.df_
 
@@ -521,9 +538,9 @@ class PandasPysparkBench(AbstractAlgorithm):
             columns = self.get_columns()
         if type(f) == str:
             f = eval(f)
-        with pd.option_context('compute.ops_on_diff_frames', True):
+        with pd.option_context("compute.ops_on_diff_frames", True):
             self.df_[col_name] = self.df_[columns].apply(f, axis=1)
-        
+
         return self.df_
 
     @timing
@@ -536,9 +553,11 @@ class PandasPysparkBench(AbstractAlgorithm):
 
         The result is stored in the current dataframe.
         """
-        self.df_ = self.df_.merge(other, left_on=left_on, right_on=right_on, how=how, **kwargs)
-        return self.df_  
-    
+        self.df_ = self.df_.merge(
+            other, left_on=left_on, right_on=right_on, how=how, **kwargs
+        )
+        return self.df_
+
     @timing
     def groupby(self, columns, f, cast=None):
         """
@@ -550,9 +569,8 @@ class PandasPysparkBench(AbstractAlgorithm):
         if cast:
             for column, t in cast.items():
                 self.df_[column] = self.df_[column].astype(t)
-                
+
         return self.df_.groupby(columns).agg(f)
-    
 
     @timing
     def categorical_encoding(self, columns):
@@ -562,7 +580,7 @@ class PandasPysparkBench(AbstractAlgorithm):
         """
         for column in columns:
             self.df_[column] = self.df_[column].astype("category").cat.codes
-            #self.df_[column] = self.df_[column].cat.codes
+            # self.df_[column] = self.df_[column].cat.codes
         return self.df_
 
     @timing
@@ -645,10 +663,12 @@ class PandasPysparkBench(AbstractAlgorithm):
         Duplicate columns are those which have same values for each row.
         """
         cols = self.df_.columns.values
-        return [(cols[i], cols[j]) 
-                for i in range(len(cols)) 
-                for j in range(i + 1, len(cols)) 
-                if self.df_[cols[i]].equals(self.df_[cols[j]])]
+        return [
+            (cols[i], cols[j])
+            for i in range(len(cols))
+            for j in range(i + 1, len(cols))
+            if self.df_[cols[i]].equals(self.df_[cols[j]])
+        ]
 
     @timing
     def to_csv(self, path="./pipeline_output/pd_pyspark_output.csv", **kwargs):
@@ -672,23 +692,25 @@ class PandasPysparkBench(AbstractAlgorithm):
         if type(query) == list:
             for q in query:
                 self.df_.query(q, inplace=inplace)
-                
+
             return self.df_
-          
+
         return self.df_.query(query, inplace=inplace)
-    
+
     def force_execution(self):
         self.df_.count()
-    
+
     @timing
     def done(self):
         pass
-        
+
     def set_construtor_args(self, args):
         pass
-    
+
     @timing
-    def to_parquet(self, path="./pipeline_output/pyspark_pandas_output.parquet", **kwargs):
+    def to_parquet(
+        self, path="./pipeline_output/pyspark_pandas_output.parquet", **kwargs
+    ):
         """
         Export the dataframe in a csv file.
         """
