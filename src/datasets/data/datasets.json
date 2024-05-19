@@ -1,8 +1,31 @@
 {
-  "airline":{
+  "test_air":{
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":100000
+    "max_rows":1000
+  },
+  "small_air":{
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows":1000000
+  },
+  "medium_air":{
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows":10000000
+  },
+  "big_air":{
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows":50000000
+  },
+  "full_air":{
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz"
   }
 }
