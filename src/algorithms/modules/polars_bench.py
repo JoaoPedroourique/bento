@@ -10,7 +10,7 @@ from src.datasets.dataset import Dataset
 
 from src.algorithms.algorithm import AbstractAlgorithm
 import polars.selectors as cs
-
+import logging
 class PolarsBench(AbstractAlgorithm):
     df_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
     backup_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
@@ -70,23 +70,30 @@ class PolarsBench(AbstractAlgorithm):
         dfs = self.load_all_files_until_max_rows(
             path, max_rows, read_function, **kwargs
         )
-        # Get the dtypes of the first DataFrame
-        dtypes = dfs[0].dtypes
-        columns = dfs[0].columns
-        column_dtype_dict = {column: dtype for column, dtype in zip(columns, dtypes)}
-
-        # Iterate over the rest of the DataFrames
-        for i in range(1, len(dfs)):
-            # Cast each DataFrame to the dtypes of the first DataFrame
-            # for column, dtype in zip(columns, dtypes):
-            dfs[i] = dfs[i].cast({'CRSElapsedTime':pl.Float64, 'CancellationCode':pl.Utf8, 'CarrierDelay':pl.Float64,
-       'WeatherDelay':pl.Float64, 'NASDelay':pl.Float64, 'SecurityDelay':pl.Float64, 'LateAircraftDelay':pl.Float64})
-                # dfs[i] = dfs[i].cast({cs.numeric(): pl.Int64, cs.temporal(): pl.Utf8})
-
-
-        # for column, dtype in zip(columns, dtypes):
-        #     print(column, dtype)
-        # Concatenate all the DataFrames
+        
+        
+        for i in range(0, len(dfs)):
+            # Cast each DataFrame to same dtypes to allow for concatting 
+            dfs[i] = dfs[i].cast(
+                {'CRSElapsedTime':pl.Float64, 'CancellationCode':pl.Utf8,
+                'CarrierDelay':pl.Float64, 'WeatherDelay':pl.Float64, 
+                'NASDelay':pl.Float64, 'SecurityDelay':pl.Float64,
+                'LateAircraftDelay':pl.Float64
+                }
+            )
+            # if i == 0:
+            #     # Get the dtypes of the first DataFrame
+            #     dtypes = dfs[0].dtypes
+            #     columns = dfs[0].columns
+            #     column_dtype_dict = {column: dtype for column, dtype in zip(columns, dtypes)}
+            # else:
+            #     # warns if any types differ in following dfs and cast them
+            #     for column, dtype in column_dtype_dict.items():
+            #         if dfs[i][column].dtype != dtype:
+            #             logging.warning(f"Column '{column}' in DataFrame {i} does not have the same dtype as in the first DataFrame. Casting it to {dtype}.")
+            #             dfs[i] = dfs[i].cast({column: dtype})
+        
+        
         self.df_ = pl.concat(dfs)
 
         self.df_ = self.df_.lazy()
