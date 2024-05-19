@@ -3,9 +3,14 @@
 [x] create basic testing functions for pandas and second library
 [x] enable output of results
 [] apenas csv.gz?
-[] avaliar como obtém as métricas (memory, ram)
+[x] avaliar como obtém as métricas (memory, ram)
+    tracemalloc parece mais confiável após arrumar, tenho fonte
 [] determinar quais métodos alterar/remover/adicionar
 [] aprofundar nas libs
 [] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
+[x] fazer um commit anterior formatando o código
+[x] testar execução no PCAD
+[] explorar uso de GPUs
+[] explorar uso de diversas máquinas
 
 python run_algorithm.py --algorithm pandas --dataset airline --pipeline-step
