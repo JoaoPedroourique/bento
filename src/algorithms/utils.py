@@ -84,21 +84,21 @@ def timing(f):
         memory_used_e = psutil.virtual_memory().used
         print(f"Memory usage: {abs((memory_used_e - memory_used_s))}")
         memory_used = max((memory_used_e - memory_used_s), 0)
-        # stopping the library
-        tracemalloc.stop()
+        
 
-        # Calculate the difference
+        # get the final memory usage
         ram = max(((tracemalloc.get_traced_memory()[1])), 0)
-
+       
         # Stop the stopwatch and calculate the elapsed time
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        # Run your method here
+        # stopping the library
+        tracemalloc.stop()
 
         # Stop tracking memory usage and get the memory usage
         # memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024**2
-
+        print(ram)
         save_to_csv(f.__name__, args[0], elapsed_time, memory_used, ram)
 
         return result

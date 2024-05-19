@@ -204,20 +204,14 @@ def run_pipeline_locally(
         )
         tracemalloc.start()
 
-        # Get the current memory usage
-        before = tracemalloc.get_traced_memory()
-
         for key, tests in pipeline_step.items():
             execute_methods(tests, ds, algo, step)
 
         algo.force_execution()
 
-        # Get the current memory usage
-        after = tracemalloc.get_traced_memory()
-
+        ram = max(((tracemalloc.get_traced_memory()[1])), 0)
         # Stop tracing memory allocations
         tracemalloc.stop()
-        ram = max(((tracemalloc.get_traced_memory()[1])), 0)
 
         # Stop the stopwatch and calculate the elapsed time
         end_time = time.time()
@@ -227,7 +221,7 @@ def run_pipeline_locally(
         memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
         memory_used_e = psutil.virtual_memory().used
-
+        print("ram: ",ram)
         print(f"Memory usage: {abs((memory_used_e - memory_used_s))}")
         memory_used = max((memory_used_e - memory_used_s), 0)
 
@@ -250,6 +244,7 @@ def run_pipeline_locally(
         tracemalloc.start()
 
         for key, tests in pipeline_step.items():
+            tracemalloc.reset_peak()
             print("Running pipeline step: ", key)
             # execute_methods(tests, ds, algo)
             start_time = time.time()
@@ -261,8 +256,8 @@ def run_pipeline_locally(
             # Call the function
             execute_methods(tests, ds, algo, step)
             # get the final memory usage
-            tracemalloc.stop()
             ram = max(((tracemalloc.get_traced_memory()[1])), 0)
+            tracemalloc.reset_peak()
             after_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
             # print(after_memory // 1024**3)
@@ -283,6 +278,7 @@ def run_pipeline_locally(
             memory_used = max((memory_used_e - memory_used_s), 0)
 
             save_to_csv(key, algo, elapsed_time, memory_used, ram, pipeline, step)
+        tracemalloc.stop()
     else:
         print("Running core functions")
         for key, tests in pipeline_step.items():
