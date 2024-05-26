@@ -13,5 +13,5 @@ docker run -d \
 	-v "$(pwd)/src":/app/src:ro \
 	-v "$(pwd)/datasets":/app/datasets:ro \
 	-v "$(pwd)/results":/app/results:rw \
-	df-benchmarks-pandas \
+	df-benchmarks-koalas \
 	--algorithm koalas --dataset medium_air --locally --cpu-limit 1
