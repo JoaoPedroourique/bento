@@ -53,14 +53,14 @@ class KoalasBench(AbstractAlgorithm):
             import json
 
             conf = json.loads(conf)
-            print(type(conf))
+            # print(type(conf))
 
         self.c = SparkConf()
-        print(conf)
+        # print(conf)
         for k in conf:
             self.c.set(k, conf[k])
 
-        print(conf)
+        # print(conf)
         self.sparkSession = None
         if len(master) > 0:
             self.sparkSession = (
@@ -272,7 +272,7 @@ class KoalasBench(AbstractAlgorithm):
         return self.df_[self.df_[column].str.contains(re.compile(pattern))]
 
     @timing
-    def locate_outliers(self, column, lower_quantile=0.1, upper_quantile=0.99):
+    def locate_outliers(self, column:str, lower_quantile=0.1, upper_quantile=0.99):
         """
         Returns the rows of the dataframe that have values
         in the provided column lower or higher than the values
@@ -518,6 +518,9 @@ class KoalasBench(AbstractAlgorithm):
         Calculate the new column col_name by applying
         the function f
         """
+        if isinstance(f, str):
+            f = eval(f)
+
         set_option("compute.ops_on_diff_frames", True)
         self.df_[col_name] = self.df_.apply(f, axis=1)
         reset_option("compute.ops_on_diff_frames")
