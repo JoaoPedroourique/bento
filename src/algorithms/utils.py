@@ -98,7 +98,6 @@ def timing(f):
 
         # Stop tracking memory usage and get the memory usage
         # memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024**2
-        print(ram)
         save_to_csv(f.__name__, args[0], elapsed_time, memory_used, ram)
 
         return result
@@ -200,7 +199,7 @@ def execute_methods(methods: dict, ds: Dataset, algo: AbstractAlgorithm, step=Fa
                 # running the method (e.g. import extra libraries)
                 if "pass" in input_cmd:
                     continue
-
+                
                 if "extra_commands" in input_cmd:
                     for cmd in input_cmd["extra_commands"]:
                         # print(f"Running extra command: {cmd}")
