@@ -2,14 +2,15 @@
 [x] define how to access my datasets
 [x] create basic testing functions for pandas and second library
 [x] enable output of results
-[] apenas csv.gz?
-[x] avaliar como obtém as métricas (memory, ram)
-    tracemalloc parece mais confiável após arrumar, tenho fonte
-[] determinar quais métodos alterar/remover/adicionar
-[] aprofundar nas libs
-[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
 [x] fazer um commit anterior formatando o código
 [x] testar execução no PCAD
+[x] avaliar como obtém as métricas (memory, ram)
+    tracemalloc parece mais confiável após arrumar, tenho referência. psutil mede memória virtual usada antes/depois, não parece confiável
+[] determinar quais métodos alterar/remover/adicionar
+    removido: to_datetime
+[] entender problema p executar no PCAD
+[] aprofundar nas libs
+[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
 [] explorar uso de GPUs
 [] explorar uso de diversas máquinas
 

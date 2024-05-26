@@ -10,7 +10,7 @@
         "sep": ",",
         "assume_missing": "True",
         "compression": "gzip"
-    }
+      }
     },
     {
       "method": "force_execution",
@@ -23,21 +23,255 @@
       "input": {}
     },
     {
+      "method": "get_stats",
+      "input": {}
+    },
+    {
       "method": "locate_null_values",
       "input": {
         "column": "ArrTime"
       }
     },
     {
+      "method": "locate_outliers",
+      "input": {
+        "column": ["ArrTime"]
+      },
+      "input_koalas": {
+        "column": "Year"
+      }
+    },
+    {
+      "method": "search_by_pattern",
+      "input": {
+        "column": "Origin",
+        "pattern": "r'^\\d'"
+      }
+    },
+    {
       "method": "sort",
       "input": {
         "columns": ["Year"]
+      }
+    },
+    {
+      "method": "query",
+      "input": {
+        "query": "DayOfWeek > 3 & DepTime > 1200"
       },
-      "input_dask": {
-        "columns": ["Year"],
-        "cast": {
-          "Year": "int64"
+      "input_polars": {
+        "query": "[('DayOfWeek', 3), ('DepTime', 1200)]"
+      },
+      "input_koalas": {
+        "query": "DayOfWeek > 3 and DepTime > 1200"
+      }
+    },
+    {
+      "method": "force_execution",
+      "input": {}
+    }
+  ],
+  "data_transformation": [
+    {
+      "method": "cast_columns_types",
+      "input": {
+        "dtypes": {
+          "FlightNum": "str"
         }
+      },
+      "input_polars": {
+        "dtypes": {
+          "FlightNum": "polars.Utf8"
+        },
+        "req_compile": ["dtypes"],
+        "extra_commands": ["import polars"]
+      }
+    },
+    {
+      "method": "delete_columns",
+      "input": {
+        "columns": ["Year", "Month", "DayofMonth"]
+      }
+    },
+    {
+      "method": "rename_columns",
+      "input": {
+        "columns": {
+          "DepTime": "DepartureTime"
+        }
+      }
+    },
+    {
+      "method": "calc_column",
+      "input": {
+        "col_name": "Cancelled",
+        "columns": ["Cancelled", "CancellationCode"],
+        "f": "lambda x: 'No' if x[1] == '' or x[0] == '' else 'Yes'"
+      },
+
+      "input_polars": {
+        "col_name": "Cancelled",
+        "columns": ["Cancelled", "CancellationCode"],
+        "f": "lambda x: 'No' if x['CancellationCode'] == '' or x['Cancelled'] == '' else 'Yes'"
+      },
+      "input_koalas": {
+        "col_name": "Cancelled",
+        "f": "lambda x: 'No' if x['CancellationCode'] == '' or x['Cancelled'] == '' else 'Yes'"
+      }
+    },
+    {
+      "method": "join",
+      "input": {
+        "other": "carriers",
+        "left_on": "UniqueCarrier",
+        "right_on": "Code",
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pandas as pd",
+          "carriers=pd.read_csv('datasets/airline/carriers.csv', compression='infer')"
+        ]
+      },
+      "input_modin_dask": {
+        "other": "carriers",
+        "left_on": "UniqueCarrier",
+        "right_on": "Code",
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pandas as pd",
+          "carriers=pd.read_csv('datasets/airline/carriers.csv', dtype='object')",
+          "import modin.pandas as mpd",
+          "carriers=mpd.DataFrame(carriers)"
+        ]
+      },
+      "input_polars": {
+        "other": "carriers",
+        "left_on": "UniqueCarrier",
+        "right_on": "Code",
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pandas as pd",
+          "carriers=pd.read_csv('datasets/airline/carriers.csv', dtype='object')",
+          "import polars as pl",
+          "carriers=pl.from_pandas(carriers).lazy()"
+        ]
+      },
+      "input_koalas": {
+        "other": "carriers",
+        "left_on": ["UniqueCarrier"],
+        "right_on": ["Code"],
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pyspark.pandas as ks",
+          "carriers=ks.read_csv('datasets/airline/carriers.csv')"
+        ]
+      }
+    },
+    {
+      "method": "one_hot_encoding",
+      "input": {
+        "columns": ["Diverted", "CancellationCode"]
+      }
+    },
+    {
+      "method": "categorical_encoding",
+      "input": {
+        "columns": ["Origin", "Dest"]
+      }
+    },
+    {
+      "method": "groupby",
+      "input": {
+        "columns": ["UniqueCarrier", "Dest"],
+        "f": {
+          "ArrDelay": "mean"
+        }
+      }
+    },
+    {
+      "method": "force_execution",
+      "input": {}
+    }
+  ],
+  "data_cleaning": [
+    {
+      "method": "drop_duplicates",
+      "input": {}
+    },
+    {
+      "method": "fill_nan",
+      "input": {
+        "columns": ["WeatherDelay"],
+        "value": "NA"
+      }
+    },
+    {
+      "method": "delete_empty_rows",
+      "input": {
+        "columns": ["DepartureTime"]
+      }
+    },
+    {
+      "method": "replace",
+      "input": {
+        "columns": ["UniqueCarrier"],
+        "to_replace": "PHL",
+        "value": "Phillips Airlines",
+        "regex": false
+      }
+    },
+    {
+      "method": "change_num_format",
+      "input": {
+        "formats": { "CarrierDelay": 2 }
+      }
+    },
+    {
+      "method": "set_content_case",
+      "input": {
+        "columns": ["UniqueCarrier"],
+        "case": "upper"
+      }
+    },
+    {
+      "method": "set_content_case",
+      "input": {
+        "columns": ["UniqueCarrier"],
+        "case": "upper"
+      }
+    },
+    {
+      "method": "edit",
+      "input": {
+        "columns": ["SecurityDelay"],
+        "func": "lambda x: x * 2"
+      },
+
+      "input_polars": {
+        "columns": ["SecurityDelay"],
+        "func": "lambda x: x['SecurityDelay'] * 2"
+      },
+      "input_koalas": {
+        "columns": ["SecurityDelay"],
+        "func": "lambda x: x * 2"
+      }
+    },
+    {
+      "method": "force_execution",
+      "input": {}
+    }
+  ],
+  "output": [
+    {
+      "method": "to_csv",
+      "input": {
+        "sep": ","
+      },
+      "input_koalas": {
+        "path": "pipeline_output/"
       }
     }
   ]
