@@ -1,3 +1,4 @@
+import ast
 import contextlib
 from os import fchdir
 import unicodedata
@@ -248,7 +249,7 @@ class PolarsBench(AbstractAlgorithm):
             value = eval(value)
 
         for c in columns:
-            self.df_ = self.df_.with_column(
+            self.df_ = self.df_.with_columns(
                 pl.when(pl.col(c).is_null()).then(value).otherwise(pl.col(c)).alias(c)
             )
 
@@ -261,18 +262,9 @@ class PolarsBench(AbstractAlgorithm):
         Columns is a list of column names
         :param columns columns to encode
         """
-        for c in columns:
-            # get unique values
-            unique_values = self.df_.select(c).unique().collect()[c]
-            for v in unique_values:
-                self.df_ = self.df_.with_columns(
-                    pl.when(pl.col(c) == v).then(1).otherwise(0).alias(c + "_" + str(v))
-                ).lazy()
-        print(self.df_.columns)
-
-        # self.df_ = pl.get_dummies(df = self.df_.collect(), columns=columns).lazy()
-
-        return self.df_
+        df_ = self.df_.collect()
+        df_ = df_.to_dummies(columns)
+        return df_
 
     @timing
     def locate_null_values(self, column):
@@ -335,15 +327,7 @@ class PolarsBench(AbstractAlgorithm):
         :param dtypes a dictionary that provides for ech column to cast the new datatype
         For example  {'col_name': pl.UInt32}
         """
-        for c in dtypes:
-            if dtypes[c] == "str":
-                self.df_ = self.df_.with_column(pl.col(c).map(str))
-            elif dtypes[c] in [pl.Date, pl.Datetime, pl.Time]:
-                self.df_ = self.df_.with_column(
-                    pl.col(c).str.strptime(dtypes[c], strict=False).keep_name()
-                )
-            else:
-                self.df_ = self.df_.with_column(pl.col(c).cast(dtypes[c], strict=False))
+        self.df_.cast(dtypes).collect()
 
         return self.df_
 
@@ -416,20 +400,20 @@ class PolarsBench(AbstractAlgorithm):
         :param column column to format
         :param format datetime formatting string
         """
-        # self.df_ = self.df_.with_column(pl.col(column).cast(pl.Datetime))
+        # self.df_ = self.df_.with_columns(pl.col(column).cast(pl.Datetime))
         if str(self.df_.select(column).dtypes[0]) in {
             "string",
             "object",
             "str",
             "Utf8",
         }:
-            self.df_ = self.df_.with_column(
+            self.df_ = self.df_.with_columns(
                 pl.col(column)
                 .str.strptime(pl.Date, fmt=format, strict=False)
                 .keep_name()
             )
         else:
-            self.df_ = self.df_.with_column(
+            self.df_ = self.df_.with_columns(
                 pl.col(column).dt.strftime(format).keep_name()
             )
         return self.df_
@@ -563,7 +547,7 @@ class PolarsBench(AbstractAlgorithm):
             return x
 
         for column in columns:
-            self.df_ = self.df_.with_column(pl.col(column).apply(func))
+            self.df_ = self.df_.with_columns(pl.col(column).apply(func))
             # self.df_ = self.df_.with_columns(pl.col(column).str.strip(chars))
         return self.df_
 
@@ -584,7 +568,7 @@ class PolarsBench(AbstractAlgorithm):
         for c in columns:
             # for  i in range(0, len(self.df_[c])):
             # self.df_[i,c] = enc_str(self.df_[i,c])
-            self.df_ = self.df_.with_column(pl.col(c).apply(enc_str))
+            self.df_ = self.df_.with_columns(pl.col(c).apply(enc_str))
         return self.df_
 
     @timing
@@ -617,14 +601,14 @@ class PolarsBench(AbstractAlgorithm):
                  e.g. to sum two columns
                  pl.map(["col1", "col2"], lambda x: x[0] + x[1])
         """
-        if type(f) == str:
+        if isinstance(f, str):
             f = eval(f)
 
-        self.df_ = self.df_.with_column(pl.struct(columns).apply(f).alias(col_name))
+        self.df_ = self.df_.with_columns(pl.struct(columns).apply(f).alias(col_name))
         # new_col = selected.apply(f)
         # print(new_col.collect())
-        # print(self.df_.with_column(pl.struct(columns).apply(f)).collect())
-        # self.df_ = self.df_.with_column(pl.struct(columns).apply(f).alias(col_name))
+        # print(self.df_.with_columns(pl.struct(columns).apply(f)).collect())
+        # self.df_ = self.df_.with_columns(pl.struct(columns).apply(f).alias(col_name))
         return self.df_
 
     @timing
@@ -657,7 +641,7 @@ class PolarsBench(AbstractAlgorithm):
         :param columns columns to use for group by
         :param f aggregation function
         """
-        return self.df_.groupby(columns).agg(f)
+        return self.df_.groupby(columns).agg(*f)
 
     @timing
     def categorical_encoding(self, columns):
@@ -717,16 +701,16 @@ class PolarsBench(AbstractAlgorithm):
         if not regex:
             mapping = dict(zip(to_replace, value))
             for col in columns:
-                self.df_ = self.df_.with_column(
+                self.df_ = self.df_.with_columns(
                     pl.col(col).apply(lambda x: mapping[x] if x in mapping else x)
                 )
         else:
             for col in columns:
-                self.df_ = self.df_.with_column(
+                self.df_ = self.df_.with_columns(
                     pl.col(col).str.replace(to_replace, value)
                 )
         # print(self.df_.select(pl.struct(col).apply(lambda x: mapping[x])).collect())
-        # self.df_ = self.df_.with_column(pl.struct(columns).apply(lambda x: mapping[x]))
+        # self.df_ = self.df_.with_columns(pl.struct(columns).apply(lambda x: mapping[x]))
         # self.df_.select(pl.struct(columns).apply(lambda x: mapping[x]))
         return self.df_
 
@@ -826,7 +810,7 @@ class PolarsBench(AbstractAlgorithm):
         self.df_.collect().write_parquet(path, **kwargs)
 
     @timing
-    def query(self, query, inplace=False):
+    def query(self, query:str, inplace=False):
         """
         Queries the dataframe and returns the corresponding
         result set.
@@ -836,7 +820,11 @@ class PolarsBench(AbstractAlgorithm):
         if inplace:
             self.df_ = self.df_.filter(query)
             return self.df_
-        return self.df_.filter(query)
+        
+        query:list[tuple] = ast.literal_eval(query)
+        # create a list of conditions
+        conditions = [pl.col(col) == value for col, value in query]
+        return self.df_.filter(*conditions).collect()
 
     def force_execution(self):
         self.df_.collect()
