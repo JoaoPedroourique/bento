@@ -10,7 +10,8 @@
         "sep": ",",
         "assume_missing": "True",
         "compression": "gzip"
-      }
+      },
+      "input_vaex": {}
     },
     {
       "method": "force_execution",
@@ -30,6 +31,9 @@
       "method": "locate_null_values",
       "input": {
         "column": "ArrTime"
+      },
+      "input_spark": {
+        "column": ["ArrTime"]
       }
     },
     {
@@ -39,6 +43,9 @@
       },
       "input_koalas": {
         "column": "Year"
+      },
+      "input_spark": {
+        "column": ["Year"]
       }
     },
     {
@@ -64,6 +71,9 @@
       },
       "input_koalas": {
         "query": "DayOfWeek > 3 and DepTime > 1200"
+      },
+      "input_spark": {
+        "query": "DayOfWeek > 3.0 and DepTime > 1200"
       }
     },
     {
@@ -85,6 +95,11 @@
         },
         "req_compile": ["dtypes"],
         "extra_commands": ["import polars"]
+      },
+      "input_spark": {
+        "dtypes": {
+          "FlightNum": "string"
+        }
       }
     },
     {
@@ -108,7 +123,6 @@
         "columns": ["Cancelled", "CancellationCode"],
         "f": "lambda x: 'No' if x[1] == '' or x[0] == '' else 'Yes'"
       },
-
       "input_polars": {
         "col_name": "Cancelled",
         "columns": ["Cancelled", "CancellationCode"],
@@ -117,6 +131,11 @@
       "input_koalas": {
         "col_name": "Cancelled",
         "f": "lambda x: 'No' if x['CancellationCode'] == '' or x['Cancelled'] == '' else 'Yes'"
+      },
+      "input_vaex": {
+        "col_name": "Cancelled",
+        "columns": ["Cancelled", "CancellationCode"],
+        "f": "lambda x, y: 'No' if y == '' or x =='' else 'Yes'"
       }
     },
     {
@@ -168,12 +187,60 @@
           "import pyspark.pandas as ks",
           "carriers=ks.read_csv('datasets/airline/carriers.csv')"
         ]
+      },
+      "input_vaex": {
+        "other": "carriers",
+        "left_on": "UniqueCarrier",
+        "right_on": "Code",
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pandas as pd",
+          "carriers=pd.read_csv('datasets/airline/carriers.csv', sep=',', header=0)",
+          "import vaex",
+          "carriers=vaex.from_pandas(carriers)"
+        ]
+      },
+      "input_rapids": {
+        "other": "carriers",
+        "left_on": "UniqueCarrier",
+        "right_on": "Code",
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pandas as pd",
+          "import cudf",
+          "carriers=cudf.from_pandas(pd.read_csv('datasets/airline/carriers.csv', sep=','))"
+        ]
+      },
+      "input_spark": {
+        "other": "carriers",
+        "left_on": ["UniqueCarrier"],
+        "right_on": ["Code"],
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "from pyspark.sql import DataFrame, SparkSession",
+          "sparkSession=SparkSession.builder.getOrCreate()",
+          "import pandas as pd",
+          "carriers=pd.read_csv('datasets/airline/carriers.csv')",
+          "from pyspark.sql.types import *",
+          "schema = StructType([StructField('Code', StringType(), True), StructField('Description', StringType(), True)])",
+          "carriers=sparkSession.createDataFrame(carriers, schema=schema)",
+          "carriers.persist()"
+        ]
       }
     },
     {
       "method": "one_hot_encoding",
       "input": {
         "columns": ["Diverted", "CancellationCode"]
+      },
+      "input_vaex": {
+        "columns": ["CRSArrTime", "CRSDepTime"]
+      },
+      "input_spark": {
+        "columns": ["CRSArrTime", "CRSDepTime"]
       }
     },
     {
@@ -227,13 +294,9 @@
       "method": "change_num_format",
       "input": {
         "formats": { "CarrierDelay": 2 }
-      }
-    },
-    {
-      "method": "set_content_case",
-      "input": {
-        "columns": ["UniqueCarrier"],
-        "case": "upper"
+      },
+      "input_vaex": {
+        "formats": { "ArrTime": 2 }
       }
     },
     {
@@ -257,6 +320,15 @@
       "input_koalas": {
         "columns": ["SecurityDelay"],
         "func": "lambda x: x * 2"
+      },
+      "input_vaex": {
+        "columns": ["SecurityDelay"],
+        "func": "lambda x: x if not x else x * 2"
+      },
+      "input_spark": {
+        "columns": ["SecurityDelay"],
+        "func": "lambda x: x * 2",
+        "ret_type": "float"
       }
     },
     {
