@@ -2,6 +2,7 @@ import os
 import re
 import pandas
 from pydantic import NoneIsAllowedError
+from functools import reduce
 
 import pyspark
 
@@ -128,27 +129,28 @@ class SparkBench(AbstractAlgorithm):
         """
         self.ds_ = ds
         path = ds.dataset_attribute.path
-        format = ds.dataset_attribute.type
+        data_format = ds.dataset_attribute.type
+        max_rows = ds.dataset_attribute.max_rows
+        if max_rows is None:
+            print("loading data with no max_rows limit")
         import os
 
         os.system("java -XX:+PrintFlagsFinal -version | grep -Ei 'maxheapsize|maxram'")
         os.system("nproc --all")
         os.system("grep MemTotal /proc/meminfo")
+                  
+        if data_format == "csv" or data_format == "csv.gz":
+            read_function = self.read_csv
+        elif data_format == "parquet":
+            read_function = self.read_parquet
+        else:
+            raise AssertionError("could not determine data_format")
 
-        if format == "csv":
-            self.df_ = self.read_csv(path, **kwargs)
-        elif format == "excel":
-            self.df_ = self.read_excel(path, **kwargs)
-        elif format == "json":
-            self.df_ = self.read_json(path, **kwargs)
-        elif format == "parquet":
-            self.df_ = self.read_parquet(path, **kwargs)
-        elif format == "sql":
-            self.df_ = self.read_sql(path, conn, **kwargs)
-        elif format == "hdf5":
-            self.df_ = self.read_hdf5(path, **kwargs)
-        elif format == "xml":
-            self.df_ = self.read_xml(path, **kwargs)
+        dfs = self.load_all_files_until_max_rows(
+            path, max_rows, read_function, **kwargs
+        )
+        # Concatenate all the DataFrames
+        self.df_ = reduce(lambda df1, df2: df1.union(df2), dfs)
 
         # remove _c0 column
         if "_c0" in self.df_.columns:
@@ -171,10 +173,12 @@ class SparkBench(AbstractAlgorithm):
         # Use Dict for sparkSession and pass it parameters sparkSession=sc.sparkSession
         # two parameter File of CSV path and the Session address
         # Return DataFrame for the CSV File
-        self.df_ = self.sparkSession.read.csv(
+        df = self.sparkSession.read.csv(
             path, header=True, inferSchema=True
         )  # Initiate the dataFrame
-        return self.df_
+        if "nrows" in kwargs:
+            df = df.limit(kwargs["nrows"])
+        return df
 
     def read_xml(self, path, **kwargs):
         """
@@ -344,40 +348,21 @@ class SparkBench(AbstractAlgorithm):
         Columns is a list of column names
         :param columns columns to encode
         """
-        from pyspark.ml.functions import vector_to_array
+        for column in columns:
+            indexer = StringIndexer(inputCol=column, outputCol=column+"_index")
+            self.df_ = indexer.fit(self.df_).transform(self.df_)
 
-        collected_df = self.df_
-        for c in columns:
-            stringIndexer = StringIndexer(inputCol=c, outputCol=f"{c}_index")
-            model = stringIndexer.fit(collected_df)
-            indexed = model.transform(collected_df)
-            encoder = OneHotEncoder(
-                inputCols=[f"{c}_index"], outputCols=[f"{c}_onehot"], dropLast=False
-            )
-            self.df_ = encoder.fit(indexed).transform(indexed)
-            self.df_ = self.df_.select(
-                "*", vector_to_array(fn.col(f"{c}_onehot")).alias(f"{c}_col_onehot")
-            )
-            categories = len(self.df_.first()[f"{c}_col_onehot"])
-            cols_expanded = [
-                (fn.col(f"{c}_col_onehot")[i]).alias(f"{c}_{model.labels[i]}")
-                for i in range(categories)
-            ]
-            self.df_ = self.df_.select("*", *cols_expanded)
-            self.df_ = self.delete_columns(
-                [f"{c}_index", f"{c}_onehot", f"{c}_col_onehot"]
-            )
+            encoder = OneHotEncoder(inputCol=column+"_index", outputCol=column+"_vec")
+            self.df_ = encoder.fit(self.df_).transform(self.df_)
 
-            # for v in unique_values:
-            #     print(v)
-            #     self.df_ = self.df_.withColumn(f"{c}_{v}", fn.when(fn.col(c) == v, 1).otherwise(0))
-
-            # # print (f"{c}_{value}")
+            self.df_ = self.df_.drop(column)
+            self.df_ = self.df_.drop(column+"_index")
+            self.df_ = self.df_.drop(column+"_vec")
 
         return self.df_
 
     @timing
-    def locate_null_values(self, column):
+    def locate_null_values(self, column:Union[list[str],'all']):
         """
         Returns the rows of the dataframe which contains
         null value in the provided column.
@@ -452,6 +437,7 @@ class SparkBench(AbstractAlgorithm):
         for c in dtypes:
             # t = eval(dtypes[c])
             self.df_ = self.df_.withColumn(c, self.df_[c].cast(dtypes[c]))
+            
         return self.df_
 
     @timing
@@ -604,37 +590,34 @@ class SparkBench(AbstractAlgorithm):
     @timing
     def pivot(self, index, columns, values, aggfunc):
         """
-            @timing
-        define the lists of columns to be used as index, columns and values respectively,
-            and the dictionary to aggregate ("sum", "mean", "count") the values for each column: {"col1": "sum"}
-
-            :param index Columns to use to aggregate data
-            :param columns columns to pivot.
-            :param values  Column(s) to use for populating new frame’s values.
-            :param aggfunc dictionary to aggregate ("sum", "mean", "count") the values for each column
-                   {"col1": "sum"}
+        Performs a pivot operation on the DataFrame.
+        :param index: List of column names to group by.
+        :param columns: Column name to pivot on.
+        :param values: Column name to aggregate.
+        :param aggfunc: Aggregation function to apply.
         """
-        # print(self.df_.groupBy(index).agg({"*": "count"}).show())
-        # print(self.df_.groupBy(index).pivot(*columns).agg(aggfunc(*values)).show())
-        # columns = [fn.col(c) for c in columns]
-        # values = [fn.col(c) for c in values]
-        # if type(columns) == list:
-        #     print('List is not supported by pyspark, the first values will took')
-        #     columns = columns[0]
+        if isinstance(columns, list):
+            if len(columns) != 1:
+                raise ValueError("Pivot operation can only be performed on one column at a time.")
+            columns = columns[0]
 
-        # return self.df_.groupBy(index).pivot(pivot_col=columns, values=values).sum(*values)
         df_copy = self.df_.select("*")
-        agg_dict = {c: aggfunc for c in values}
-        for c in values:
-            df_copy = df_copy.join(
-                df_copy.withColumn("combined", fn.concat(fn.lit(f"{c}_"), fn.col(c)))
-                .groupBy(index)
-                .pivot("combined")
-                .agg(agg_dict),
-                on=index,
-                how="left",
-            )
-        return df_copy
+        if values =="CarrierDelay":
+            df_copy = df_copy.withColumn("CarrierDelay", fn.col("CarrierDelay").cast("int"))
+        df_pivot = df_copy.groupBy(index).pivot(columns)
+
+        if aggfunc == "sum":
+            df_pivot = df_pivot.sum(values)
+        elif aggfunc == "mean":
+            df_pivot = df_pivot.mean(values)
+        elif aggfunc == "min":
+            df_pivot = df_pivot.min(values)
+        elif aggfunc == "max":
+            df_pivot = df_pivot.max(values)
+        else:
+            raise ValueError(f"Unsupported aggregation function: {aggfunc}")
+
+        return self.df_
 
     @timing
     def unpivot(self, columns, var_name, val_name):
@@ -753,7 +736,6 @@ class SparkBench(AbstractAlgorithm):
         :param col_name column on which apply the function
         :param f function to apply, must be an expression, eg. A+1
         """
-        # print schema
         udf_lambda = fn.udf(eval(f), StringType())
         new_col_expr = udf_lambda(*[fn.col(col_name) for col_name in columns])
         self.df_ = self.df_.withColumn(col_name, new_col_expr)
@@ -909,6 +891,10 @@ class SparkBench(AbstractAlgorithm):
         :param columns columns on which apply this method
         :param func function to apply
         """
+        if ret_type=='float':
+            ret_type=DoubleType() 
+        else: 
+            raise ValueError("no other types have been set")
         my_udf = fn.udf(f=eval(func), returnType=ret_type)
         for c in columns:
             self.df_ = self.df_.withColumn(c, my_udf(fn.col(c)))
@@ -999,10 +985,9 @@ class SparkBench(AbstractAlgorithm):
         :param path path on which store the csv
         :param kwargs extra parameters
         """
-        # path = path.replace("NAME", self.name)
-        self.df_.coalesce(1).write.mode("overwrite").save(
-            path, format="csv", header=True
-        )
+        # path = path.replace("NAME", self.name)a
+        self.df_\
+        .write.format("csv").mode("overwrite").option("header", "true").save(path)
 
         # except Exception as e:
         #     print(e)
@@ -1016,8 +1001,6 @@ class SparkBench(AbstractAlgorithm):
         :param query: a string with the query conditions, e.g. "col1 > 1 & col2 < 10"
         :return: subset of the dataframe that correspond to the selection conditions
         """
-        if type(query) == str:
-            query = eval(query)
 
         if inplace:
             self.df_ = self.df_.where(query)

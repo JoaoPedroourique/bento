@@ -99,7 +99,11 @@ class AbstractAlgorithm(abc.ABC):
             df = read_function(f, **kwargs)
 
             # Update the total number of rows read
-            total_rows += len(df)
+            if self.name == 'spark':
+                # spark dfs have no len()
+                total_rows += df.count()
+            else:
+                total_rows += len(df)
 
             # Add the DataFrame to the list
             dfs.append(df)
