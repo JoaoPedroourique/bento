@@ -73,22 +73,23 @@ class VaexBench(AbstractAlgorithm):
         """
         self.ds_ = ds
         path = ds.dataset_attribute.path
-        format = ds.dataset_attribute.type
+        data_format = ds.dataset_attribute.type
+        max_rows = ds.dataset_attribute.max_rows
+        if max_rows is None:
+            print("loading data with no max_rows limit")
 
-        if format == "csv":
-            self.df_ = self.read_csv(path, **kwargs)
-        elif format == "excel":
-            self.df_ = self.read_excel(path, **kwargs)
-        elif format == "hdf5":
-            self.df_ = self.read_hdf5(path, **kwargs)
-        elif format == "json":
-            self.df_ = self.read_json(path, **kwargs)
-        elif format == "parquet":
-            self.df_ = self.read_parquet(path, **kwargs)
-        elif format == "sql":
-            self.df_ = self.read_sql(path, conn, **kwargs)
-        elif format == "xml":
-            self.df_ = self.read_xml(path, **kwargs)
+        if data_format == "csv" or data_format == "csv.gz":
+            read_function = self.read_csv
+        elif data_format == "parquet":
+            read_function = self.read_parquet
+        else:
+            raise AssertionError("could not determine data_format")
+        dfs = self.load_all_files_until_max_rows(
+            path, max_rows, read_function, **kwargs
+        )
+        # Concatenate all the DataFrames
+        self.df_ = vx.concat(dfs)
+
         return self.df_
 
     def read_json(self, path, **kwargs):
@@ -105,7 +106,20 @@ class VaexBench(AbstractAlgorithm):
         :param path: path of the file to load
         :param kwargs: extra arguments
         """
-        return vx.from_csv_arrow(path, **kwargs)
+        nrows =  kwargs.pop('nrows', None)
+        # vaex does not directly support reading only a certain number of rows
+        df = vx.from_csv_arrow(path, **kwargs)
+        # Enforce datatype for columns with null datatypes
+        df['CancellationCode'] = df['CancellationCode'].astype('str')
+        df['CarrierDelay'] = df['CarrierDelay'].astype('str')
+        df['WeatherDelay'] = df['WeatherDelay'].astype('str')
+        df['NASDelay'] = df['NASDelay'].astype('str')
+        df['SecurityDelay'] = df['SecurityDelay'].astype('str')
+        df['LateAircraftDelay'] = df['LateAircraftDelay'].astype('str')
+     
+        if nrows is not None:
+            df = df[:nrows]
+        return df
 
     def read_xml(self, path, **kwargs):
         """
@@ -350,7 +364,7 @@ class VaexBench(AbstractAlgorithm):
         """
         df_copy = self.df_.copy()
         for c in self.get_columns():
-            if str(df_copy[c].dtype) in {"date32[day]", "time32[s]"}:
+            if str(df_copy[c].dtype) in {"date32[day]", "time32[s]", 'null'}:
                 df_copy[c] = df_copy[c].astype(str)
 
         return df_copy.describe(strings=False)
@@ -535,34 +549,18 @@ class VaexBench(AbstractAlgorithm):
         :param aggfunc dictionary to aggregate ("sum", "mean", "count") the values for each column
                {"col1": "sum"}
         """
-        import itertools
+        # Ensure index, columns, and values are lists for consistency
+        if not isinstance(index, list):
+            index = [index]
+        if not isinstance(columns, list):
+            columns = [columns]
+        if not isinstance(values, list):
+            values = [values]
 
-        try:
-            df_copy = self.df_.copy()
-            agg = {c: aggfunc(v) for c, v in itertools.product(columns, values)}
-            if len(index) > 1:
-                print("multi-index")
-                df_copy["index"] = df_copy.apply(
-                    lambda *row: str(row), arguments=[df_copy[c] for c in index]
-                )
-                index = "index"
+        # Group by index and columns
+        df_grouped = self.df_.groupby(by=index + columns, agg=aggfunc)
 
-            return df_copy.groupby(by=index).agg(agg)
-
-        except Exception:
-            import pandas as pd
-
-            print(
-                "Warning: pivot is not implemented for this backend, falling back to pandas"
-            )
-            pivot = pd.pivot_table(
-                self.df_.to_pandas_df(),
-                index=index,
-                columns=columns,
-                values=values,
-                aggfunc=aggfunc,
-            )
-            return vx.from_pandas(pivot.reset_index())
+        return df_grouped
 
     # Operazioni di PIVOT - UNPIVOT non supportate in VAEX
     @timing
