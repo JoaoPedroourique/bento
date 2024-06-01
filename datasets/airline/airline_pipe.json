@@ -105,7 +105,7 @@
     {
       "method": "delete_columns",
       "input": {
-        "columns": ["Year", "Month", "DayofMonth"]
+        "columns": ["NASDelay", "LateAircraftDelay"]
       }
     },
     {
@@ -136,8 +136,14 @@
         "col_name": "Cancelled",
         "columns": ["Cancelled", "CancellationCode"],
         "f": "lambda x, y: 'No' if y == '' or x =='' else 'Yes'"
+      },
+      "input_spark": {
+        "col_name": "Cancelled",
+        "columns": ["Cancelled", "CancellationCode"],
+        "f": "lambda x, y: 'No' if y == '' or x =='' else 'Yes'"
       }
     },
+
     {
       "method": "join",
       "input": {
@@ -229,6 +235,35 @@
           "carriers=sparkSession.createDataFrame(carriers, schema=schema)",
           "carriers.persist()"
         ]
+      }
+    },
+    {
+      "method": "pivot",
+      "input": {
+        "index": ["Year", "Month"],
+        "columns": ["UniqueCarrier"],
+        "values": ["CarrierDelay"],
+        "aggfunc": "sum"
+      },
+      "input_koalas": {
+        "index": ["Year", "Month"],
+        "columns": "UniqueCarrier",
+        "values": ["CarrierDelay"],
+        "aggfunc": "sum"
+      },
+      "input_vaex": {
+        "index": ["Year", "Month"],
+        "columns": "UniqueCarrier",
+        "values": ["CarrierDelay"],
+        "aggfunc": "vaex.agg.count",
+        "req_compile": ["aggfunc"],
+        "extra_commands": ["import vaex"]
+      },
+      "input_spark": {
+        "index": ["Year", "Month"],
+        "columns": "UniqueCarrier",
+        "values": "CarrierDelay",
+        "aggfunc": "sum"
       }
     },
     {
