@@ -479,7 +479,7 @@ class PolarsBench(AbstractAlgorithm):
             index=index,
             columns=columns,
             values=values,
-            aggregate_fn=aggfunc,
+            aggregate_function=aggfunc,
             maintain_order=True,
         )
 
