@@ -1,8 +1,4 @@
-FROM ubuntu:18.04
-
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:openjdk-r/ppa
+FROM python:3.9-buster
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
 RUN ln -fs /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
@@ -27,13 +23,6 @@ RUN apt-get update && apt-get install -y \
     python3-openssl \
     git
 
-    RUN wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz \
-    && tar xvf Python-3.9.18.tgz
-
-RUN cd Python-3.9.18 \
-    && ./configure --enable-optimizations \
-    && make -j 8 \
-    && make altinstall
 
 WORKDIR /app
 ADD ./requirements.txt /app
