@@ -42,7 +42,8 @@ class KoalasBench(AbstractAlgorithm):
         self.mem_ = mem
         self.cpu_ = cpu
         import sys
-
+        set_option('compute.default_index_type', 'distributed-sequence')
+        
         os.environ["PYSPARK_PYTHON"] = sys.executable
         os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
@@ -434,7 +435,15 @@ class KoalasBench(AbstractAlgorithm):
         and the dictionary to aggregate ("sum", "mean", "count") the values for each column: {"col1": "sum"}
         (see pivot_table in pandas documentation)
         """
-        self.df_ = self.df_.pivot_table(
+        # Ensure values is a list for consistency
+        if not isinstance(values, list):
+            values = [values]
+
+        # Cast values to float
+        for value in values:
+            self.df_[value] = self.df_[value].astype('float64')
+
+        pivot_df = self.df_.pivot_table(
             index=index, values=values, columns=columns, aggfunc=aggfunc
         ).reset_index()
         return self.df_
