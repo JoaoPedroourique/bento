@@ -7,11 +7,11 @@
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=errors/%x_%j.err
 
-docker run -d \
+docker run \
 	--cpuset-cpus="0-1" \
 	-v "$(pwd)":/app:rw \
 	-v "$(pwd)/src":/app/src:ro \
 	-v "$(pwd)/datasets":/app/datasets:ro \
 	-v "$(pwd)/results":/app/results:rw \
 	df-benchmarks-polars \
-	--algorithm polars --dataset medium_air --locally --cpu-limit 1
+	--algorithm polars --dataset medium_air --locally

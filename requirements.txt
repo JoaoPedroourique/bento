@@ -18,5 +18,6 @@ pyarrow
 pydantic==1.10.2
 pydantic_factories==1.17.2
 pyspark==3.4.1
+vaex==4.17.0
 unidist==0.2.2
 urllib3

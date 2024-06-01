@@ -7,11 +7,10 @@
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=errors/%x_%j.err
 
-docker run -d \
-	--cpuset-cpus="0-1" \
+docker run \
 	-v "$(pwd)":/app:rw \
 	-v "$(pwd)/src":/app/src:ro \
 	-v "$(pwd)/datasets":/app/datasets:ro \
 	-v "$(pwd)/results":/app/results:rw \
 	df-benchmarks-koalas \
-	--algorithm koalas --dataset medium_air --locally --cpu-limit 1
+	--algorithm koalas --dataset test_air --locally
