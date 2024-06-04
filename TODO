@@ -6,12 +6,13 @@
 [x] testar execução no PCAD
 [x] avaliar como obtém as métricas (memory, ram)
     tracemalloc parece mais confiável após arrumar, tenho referência. psutil mede memória virtual usada antes/depois, não parece confiável
-[] determinar quais métodos alterar/remover/adicionar
+[x] determinar quais métodos alterar/remover/adicionar
     removido: to_datetime
-[] entender problema p executar no PCAD
-[] aprofundar nas libs
-[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
+[x] entender problema p executar no PCAD
+[x] aprofundar nas libs
+[x] adicionar spark e vaex
+[] começar a analisar resultados, criar visualizações
+[] adicionar rapids
 [] explorar uso de GPUs
+[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
 [] explorar uso de diversas máquinas
-
-python run_algorithm.py --algorithm pandas --dataset airline --pipeline-step
