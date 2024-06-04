@@ -350,7 +350,7 @@
 
       "input_polars": {
         "columns": ["SecurityDelay"],
-        "func": "lambda x: x['SecurityDelay'] * 2"
+        "func": "lambda x: x * 2"
       },
       "input_koalas": {
         "columns": ["SecurityDelay"],
