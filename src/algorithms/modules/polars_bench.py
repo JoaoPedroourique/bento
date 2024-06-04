@@ -74,14 +74,19 @@ class PolarsBench(AbstractAlgorithm):
         
         
         for i in range(0, len(dfs)):
-            # Cast each DataFrame to same dtypes to allow for concatting 
-            dfs[i] = dfs[i].cast(
-                {'CRSElapsedTime':pl.Float64, 'CancellationCode':pl.Utf8,
+            cast_dict = {'CRSElapsedTime':pl.Float64, 'CancellationCode':pl.Utf8,
                 'CarrierDelay':pl.Float64, 'WeatherDelay':pl.Float64, 
                 'NASDelay':pl.Float64, 'SecurityDelay':pl.Float64,
-                'LateAircraftDelay':pl.Float64
+                'LateAircraftDelay':pl.Float64,'TaxiIn':pl.Int64,
+                'TaxiOut':pl.Int64,'TailNum':pl.Utf8,'Distance':pl.Float64,
                 }
-            )
+            for column, dtype in cast_dict.items():
+                try:
+                    dfs[i] = dfs[i].cast({column: dtype})
+                except Exception as e:
+                    logging.error(f"Failed to cast column '{column}' to {dtype}")
+                    raise e
+                
             # if i == 0:
             #     # Get the dtypes of the first DataFrame
             #     dtypes = dfs[0].dtypes
@@ -93,9 +98,19 @@ class PolarsBench(AbstractAlgorithm):
             #         if dfs[i][column].dtype != dtype:
             #             logging.warning(f"Column '{column}' in DataFrame {i} does not have the same dtype as in the first DataFrame. Casting it to {dtype}.")
             #             dfs[i] = dfs[i].cast({column: dtype})
-        
-        
-        self.df_ = pl.concat(dfs)
+
+        try:
+            self.df_ = pl.concat(dfs)
+        except Exception as e:
+            dtypes = dfs[0].dtypes
+            columns = dfs[0].columns
+            column_dtype_dict = {column: dtype for column, dtype in zip(columns, dtypes)}
+            for i in range(1, len(dfs)):
+                for column, dtype in column_dtype_dict.items():
+                    if dfs[i][column].dtype != dtype:
+                        logging.error(f"Column '{column}'  {dfs[i][column].dtype} in DataFrame {i} does not have the same dtype as in the first DataFrame, {dtype}")
+                        # dfs[i] = dfs[i].cast({column: dtype})
+            raise e
 
         self.df_ = self.df_.lazy()
 
