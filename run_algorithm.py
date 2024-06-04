@@ -61,6 +61,10 @@ if __name__ == "__main__":
         ds = Dataset().get_dataset_by_name(args.dataset)
         if ds is None:
             raise Exception(f"Dataset {args.dataset} not found")
+        else:
+            print(f"running {args.algorithm} on {ds.name}")
+            if ds.dataset_attribute.max_rows:
+                print(f"max rows: {ds.dataset_attribute.max_rows}")
 
         from src.algorithms.run import run_pipeline_locally
 
