@@ -21,7 +21,13 @@
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":50000000
+    "max_rows":20000000
+  },
+  "great_air":{
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows":30000000
   },
   "full_air":{
     "path": "datasets/airline/*.csv.gz",
