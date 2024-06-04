@@ -953,7 +953,7 @@ class VaexBench(AbstractAlgorithm):
         if not os.path.exists("./pipeline_output"):
             os.makedirs("./pipeline_output")
 
-        self.df_.export(f"./pipeline_output/{self.name}_output.csv", progress=True)
+        self.df_.export_csv_arrow(f"./pipeline_output/{self.name}_output.csv")
 
     @timing
     def to_parquet(self, path="./pipeline_output/vaex_loan_output.parquet", **kwargs):
