@@ -8,7 +8,7 @@
 #SBATCH --error=errors/%x_%j.err
 
 # Define an array of algorithms
-ALGORITHMS=("koalas" "pandas" "polars" "modin_dask" "vaex" "spark")
+ALGORITHMS=("spark" "pandas" "polars" "modin_dask" "koalas" "vaex")
 DATASET="small_air"
 
 # Loop over each algorithm
@@ -20,6 +20,7 @@ for ALGORITHM in "${ALGORITHMS[@]}"; do
 		RUNTIME=""
 	fi
     docker run \
+        $RUNTIME \
         -v "$(pwd)":/app:rw \
         -v "$(pwd)/src":/app/src:ro \
         -v "$(pwd)/datasets":/app/datasets:ro \
