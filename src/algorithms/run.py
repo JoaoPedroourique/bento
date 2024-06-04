@@ -225,7 +225,7 @@ def run_pipeline_locally(
         print(f"Memory usage: {abs((memory_used_e - memory_used_s))}")
         memory_used = max((memory_used_e - memory_used_s), 0)
 
-        save_to_csv("pipe", algo, elapsed_time, memory_used, ram, pipeline, step)
+        save_to_csv("pipe", algo, elapsed_time, memory_used, ram, pipeline, step, max_rows=ds.dataset_attribute.max_rows)
 
     elif step:
         process = psutil.Process(os.getpid())
@@ -277,7 +277,7 @@ def run_pipeline_locally(
             print(f"Memory usage: {abs((memory_used_e - memory_used_s))} GB")
             memory_used = max((memory_used_e - memory_used_s), 0)
 
-            save_to_csv(key, algo, elapsed_time, memory_used, ram, pipeline, step)
+            save_to_csv(key, algo, elapsed_time, memory_used, ram, pipeline, step, max_rows=ds.dataset_attribute.max_rows)
         tracemalloc.stop()
     else:
         print("Running core functions")

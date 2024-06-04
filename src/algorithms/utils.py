@@ -14,7 +14,7 @@ timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
 
 
 def save_to_csv(
-    function_name, algo, elapsed_time, memory_usage, ram, pipeline=False, step=False
+    function_name, algo, elapsed_time, memory_usage, ram, pipeline=False, step=False, max_rows=None
 ):
     """Save the execution stats to csv file
 
@@ -30,11 +30,11 @@ def save_to_csv(
     # print("Saving results...")
     if step:
         # print("Saving Step...")
-        folder = f"{algo.ds_.name}_pipe_step/{algo.name}_mem{algo.mem_}_cpu{algo.cpu_}/"
+        folder = f"{algo.ds_.name}_pipe_step/{algo.name}_mem{algo.mem_}_rows{max_rows}/"
     elif pipeline:
-        folder = f"{algo.ds_.name}_pipe/{algo.name}_mem{algo.mem_}_cpu{algo.cpu_}"
+        folder = f"{algo.ds_.name}_pipe/{algo.name}_mem{algo.mem_}_rows{max_rows}"
     else:
-        folder = f"{algo.ds_.name}/{algo.name}_mem{algo.mem_}_cpu{algo.cpu_}"
+        folder = f"{algo.ds_.name}/{algo.name}_mem{algo.mem_}_rows{max_rows}"
 
     path_name = "results"
     out_path = os.path.join(path_name, folder)
