@@ -100,6 +100,15 @@ class VaexBench(AbstractAlgorithm):
         """
         return vx.from_json(path, **kwargs)
 
+    def _cast_problematic_columns(self, df):
+        problematic_columns = ['CancellationCode', 'CarrierDelay',
+            'WeatherDelay', 'NASDelay', 'SecurityDelay', 'LateAircraftDelay'
+        ]
+        cols_to_cast = [col for col in problematic_columns if col in df.get_column_names()]
+        for col in cols_to_cast:
+            df[col] = df[col].astype(str)
+        return df
+    
     def read_csv(self, path, **kwargs):
         """
         Read a csv file
@@ -110,15 +119,12 @@ class VaexBench(AbstractAlgorithm):
         # vaex does not directly support reading only a certain number of rows
         df = vx.from_csv_arrow(path, **kwargs)
         # Enforce datatype for columns with null datatypes
-        df['CancellationCode'] = df['CancellationCode'].astype('str')
-        df['CarrierDelay'] = df['CarrierDelay'].astype('str')
-        df['WeatherDelay'] = df['WeatherDelay'].astype('str')
-        df['NASDelay'] = df['NASDelay'].astype('str')
-        df['SecurityDelay'] = df['SecurityDelay'].astype('str')
-        df['LateAircraftDelay'] = df['LateAircraftDelay'].astype('str')
-     
+        
+
         if nrows is not None:
             df = df[:nrows]
+        
+        df = self._cast_problematic_columns(df)
         return df
 
     def read_xml(self, path, **kwargs):
@@ -411,21 +417,22 @@ class VaexBench(AbstractAlgorithm):
         if columns is None:
             columns = self.get_columns()
         # This is a non trivial problem actually and we do not have a official implementation of this yet.
-        try:
-            columns = [self.df_[c] for c in self.df_.get_column_names()]
-            self.df_["hashed"] = self.df_.apply(
-                lambda *row: hash(str(row)), arguments=columns
-            )
-            unique_hashes = self.df_["hashed"].unique()
-            self.df_ = self.df_.filter(self.df_["hashed"].isin(unique_hashes))
-            self.df_ = self.df_.drop("hashed")
-        except Exception:
-            print(
-                "Warning: drop_duplicates is not implemented for this backend, falling back to pandas"
-            )
-            self.df_ = vx.from_pandas(
-                self.df_.to_pandas_df().drop_duplicates(subset=columns)
-            )
+        # try:
+        #     columns = [self.df_[c] for c in self.df_.get_column_names()]
+        #     self.df_["hashed"] = self.df_.apply(
+        #         lambda *row: hash(str(row)), arguments=columns
+        #     )
+        #     unique_hashes = self.df_["hashed"].unique()
+        #     self.df_ = self.df_.filter(self.df_["hashed"].isin(unique_hashes))
+        #     self.df_ = self.df_.drop("hashed")
+        # except Exception:
+        print(
+            "Warning: drop_duplicates is not implemented for this backend, falling back to pandas"
+        )
+        self.df_ = vx.from_pandas(
+            self.df_.to_pandas_df().drop_duplicates(subset=columns)
+        )
+        self._df_ = self._cast_problematic_columns(self.df_)
 
         return self.df_
 
@@ -952,8 +959,7 @@ class VaexBench(AbstractAlgorithm):
 
         if not os.path.exists("./pipeline_output"):
             os.makedirs("./pipeline_output")
-
-        self.df_.export_csv_arrow(f"./pipeline_output/{self.name}_output.csv")
+        self.df_.export_many(f"./pipeline_output/{self.name}"+"_chunk-{i:02}output.csv", chunk_size=100000)
 
     @timing
     def to_parquet(self, path="./pipeline_output/vaex_loan_output.parquet", **kwargs):
