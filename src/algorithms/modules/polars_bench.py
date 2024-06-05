@@ -811,8 +811,11 @@ class PolarsBench(AbstractAlgorithm):
         # self.df_ = self.df_.collect()
         # print(self.df_.collect().head(10))
         try:
-            self.df_.collect().write_csv(path, **kwargs)
-        except Exception:
+            batch_size = 100000
+            print("using batch_size {batch_size}")
+            self.df_.collect().write_csv(path, **kwargs,batch_size=batch_size)
+        except Exception as e:
+            print('error', e)
             self.df_.collect().to_pandas().to_csv(path, **kwargs)
 
     @timing

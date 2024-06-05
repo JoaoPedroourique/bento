@@ -377,6 +377,9 @@
       "input": {
         "sep": ","
       },
+      "input_polars": {
+        "separator": ","
+      },
       "input_koalas": {
         "path": "pipeline_output/"
       }
