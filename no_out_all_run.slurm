@@ -12,7 +12,7 @@
 #SBATCH --error=errors/%x_%j.err
 
 ALGORITHMS=("spark" "pandas" "polars" "modin_dask" "koalas" "vaex")
-DATASETS=("small_air" "medium_air" "big_air", "great_air")
+DATASETS=("small_no_out" "medium_no_out" "big_no_out", "great_no_out")
 PIPELINE_FLAGS=("--pipeline" "--pipeline-step" "")
 
 # Loop over each algorithm
