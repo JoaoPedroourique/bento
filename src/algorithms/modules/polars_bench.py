@@ -12,6 +12,8 @@ from src.datasets.dataset import Dataset
 from src.algorithms.algorithm import AbstractAlgorithm
 import polars.selectors as cs
 import logging
+
+
 class PolarsBench(AbstractAlgorithm):
     df_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
     backup_: Union[pl.DataFrame, pl.Series, pl.LazyFrame] = None
@@ -71,22 +73,28 @@ class PolarsBench(AbstractAlgorithm):
         dfs = self.load_all_files_until_max_rows(
             path, max_rows, read_function, **kwargs
         )
-        
-        
+
         for i in range(0, len(dfs)):
-            cast_dict = {'CRSElapsedTime':pl.Float64, 'CancellationCode':pl.Utf8,
-                'CarrierDelay':pl.Float64, 'WeatherDelay':pl.Float64, 
-                'NASDelay':pl.Float64, 'SecurityDelay':pl.Float64,
-                'LateAircraftDelay':pl.Float64,'TaxiIn':pl.Int64,
-                'TaxiOut':pl.Int64,'TailNum':pl.Utf8,'Distance':pl.Float64,
-                }
+            cast_dict = {
+                "CRSElapsedTime": pl.Float64,
+                "CancellationCode": pl.Utf8,
+                "CarrierDelay": pl.Float64,
+                "WeatherDelay": pl.Float64,
+                "NASDelay": pl.Float64,
+                "SecurityDelay": pl.Float64,
+                "LateAircraftDelay": pl.Float64,
+                "TaxiIn": pl.Int64,
+                "TaxiOut": pl.Int64,
+                "TailNum": pl.Utf8,
+                "Distance": pl.Float64,
+            }
             for column, dtype in cast_dict.items():
                 try:
                     dfs[i] = dfs[i].cast({column: dtype})
                 except Exception as e:
                     logging.error(f"Failed to cast column '{column}' to {dtype}")
                     raise e
-                
+
             # if i == 0:
             #     # Get the dtypes of the first DataFrame
             #     dtypes = dfs[0].dtypes
@@ -104,11 +112,15 @@ class PolarsBench(AbstractAlgorithm):
         except Exception as e:
             dtypes = dfs[0].dtypes
             columns = dfs[0].columns
-            column_dtype_dict = {column: dtype for column, dtype in zip(columns, dtypes)}
+            column_dtype_dict = {
+                column: dtype for column, dtype in zip(columns, dtypes)
+            }
             for i in range(1, len(dfs)):
                 for column, dtype in column_dtype_dict.items():
                     if dfs[i][column].dtype != dtype:
-                        logging.error(f"Column '{column}'  {dfs[i][column].dtype} in DataFrame {i} does not have the same dtype as in the first DataFrame, {dtype}")
+                        logging.error(
+                            f"Column '{column}'  {dfs[i][column].dtype} in DataFrame {i} does not have the same dtype as in the first DataFrame, {dtype}"
+                        )
                         # dfs[i] = dfs[i].cast({column: dtype})
             raise e
 
@@ -814,7 +826,7 @@ class PolarsBench(AbstractAlgorithm):
             print("using polars backend")
             self.df_.collect().write_csv(path, **kwargs)
         except Exception as e:
-            print('error', e)
+            print("error", e)
             self.df_.collect().to_pandas().to_csv(path, **kwargs)
 
     @timing
@@ -827,7 +839,7 @@ class PolarsBench(AbstractAlgorithm):
         self.df_.collect().write_parquet(path, **kwargs)
 
     @timing
-    def query(self, query:str, inplace=False):
+    def query(self, query: str, inplace=False):
         """
         Queries the dataframe and returns the corresponding
         result set.
@@ -837,8 +849,8 @@ class PolarsBench(AbstractAlgorithm):
         if inplace:
             self.df_ = self.df_.filter(query)
             return self.df_
-        
-        query:list[tuple] = ast.literal_eval(query)
+
+        query: list[tuple] = ast.literal_eval(query)
         # create a list of conditions
         conditions = [pl.col(col) == value for col, value in query]
         return self.df_.filter(*conditions).collect()
