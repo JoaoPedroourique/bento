@@ -300,10 +300,6 @@
   ],
   "data_cleaning": [
     {
-      "method": "drop_duplicates",
-      "input": {}
-    },
-    {
       "method": "fill_nan",
       "input": {
         "columns": ["WeatherDelay"],
