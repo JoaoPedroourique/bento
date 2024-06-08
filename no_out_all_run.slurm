@@ -1,13 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=tcc_joao
 #SBATCH --partition=tupi
-#SBATCH --nodelist=tupi3
+#SBATCH --nodelist=tupi4
 #SBATCH --nodes=1
-#SBATCH --time=01:00:00
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=errors/%x_%j.err
-
-#SBATCH --time=01:00:00
+#SBATCH --time=03:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=errors/%x_%j.err
 
