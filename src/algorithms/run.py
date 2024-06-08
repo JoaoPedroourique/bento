@@ -108,7 +108,7 @@ def run_algo_docker(
             os.path.abspath("."): {"bind": "/app/", "mode": "rw"},
             os.path.abspath("src"): {"bind": "/app/src", "mode": "ro"},
             os.path.abspath("datasets"): {"bind": "/app/datasets", "mode": "ro"},
-            os.path.abspath("results"): {"bind": "/app/results", "mode": "rw"},
+            os.path.abspath("new_results"): {"bind": "/app/new_results", "mode": "rw"},
         },
         cpuset_cpus=str(cpu_limit),
         mem_limit=mem_limit,
@@ -221,11 +221,20 @@ def run_pipeline_locally(
         memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
         memory_used_e = psutil.virtual_memory().used
-        print("ram: ",ram)
+        print("ram: ", ram)
         print(f"Memory usage: {abs((memory_used_e - memory_used_s))}")
         memory_used = max((memory_used_e - memory_used_s), 0)
 
-        save_to_csv("pipe", algo, elapsed_time, memory_used, ram, pipeline, step, max_rows=ds.dataset_attribute.max_rows)
+        save_to_csv(
+            "pipe",
+            algo,
+            elapsed_time,
+            memory_used,
+            ram,
+            pipeline,
+            step,
+            max_rows=ds.dataset_attribute.max_rows,
+        )
 
     elif step:
         process = psutil.Process(os.getpid())
@@ -277,7 +286,16 @@ def run_pipeline_locally(
             print(f"Memory usage: {abs((memory_used_e - memory_used_s))} GB")
             memory_used = max((memory_used_e - memory_used_s), 0)
 
-            save_to_csv(key, algo, elapsed_time, memory_used, ram, pipeline, step, max_rows=ds.dataset_attribute.max_rows)
+            save_to_csv(
+                key,
+                algo,
+                elapsed_time,
+                memory_used,
+                ram,
+                pipeline,
+                step,
+                max_rows=ds.dataset_attribute.max_rows,
+            )
         tracemalloc.stop()
     else:
         print("Running core functions")

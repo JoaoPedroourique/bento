@@ -32,7 +32,7 @@ for ALGORITHM in "${ALGORITHMS[@]}"; do
                 -v "$(pwd)":/app:rw \
                 -v "$(pwd)/src":/app/src:ro \
                 -v "$(pwd)/datasets":/app/datasets:ro \
-                -v "$(pwd)/results":/app/results:rw \
+                -v "$(pwd)/new_results":/app/new_results:rw \
                 df-benchmarks-$ALGORITHM \
                 --algorithm $ALGORITHM --dataset $DATASET --locally $PIPELINE_FLAG
         done

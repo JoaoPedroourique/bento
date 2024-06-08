@@ -14,7 +14,14 @@ timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
 
 
 def save_to_csv(
-    function_name, algo, elapsed_time, memory_usage, ram, pipeline=False, step=False, max_rows=None
+    function_name,
+    algo,
+    elapsed_time,
+    memory_usage,
+    ram,
+    pipeline=False,
+    step=False,
+    max_rows=None,
 ):
     """Save the execution stats to csv file
 
@@ -36,7 +43,7 @@ def save_to_csv(
     else:
         folder = f"{algo.ds_.name}/{algo.name}_mem{algo.mem_}_rows{max_rows}"
 
-    path_name = "results"
+    path_name = "new_results"
     out_path = os.path.join(path_name, folder)
     if not os.path.exists(out_path):
         print(f"Creating folder: {out_path}")
@@ -84,11 +91,10 @@ def timing(f):
         memory_used_e = psutil.virtual_memory().used
         print(f"Memory usage: {abs((memory_used_e - memory_used_s))}")
         memory_used = max((memory_used_e - memory_used_s), 0)
-        
 
         # get the final memory usage
         ram = max(((tracemalloc.get_traced_memory()[1])), 0)
-       
+
         # Stop the stopwatch and calculate the elapsed time
         end_time = time.time()
         elapsed_time = end_time - start_time
@@ -138,10 +144,10 @@ def get_err_logger():
     Get the error log file
     """
     # check if the results folder exists
-    if not os.path.exists("results"):
-        os.makedirs("results")
+    if not os.path.exists("new_results"):
+        os.makedirs("new_results")
 
-    out_path = os.path.join("results", "errors.log")
+    out_path = os.path.join("new_results", "errors.log")
     return open(out_path, "at")
 
 
@@ -199,7 +205,7 @@ def execute_methods(methods: dict, ds: Dataset, algo: AbstractAlgorithm, step=Fa
                 # running the method (e.g. import extra libraries)
                 if "pass" in input_cmd:
                     continue
-                
+
                 if "extra_commands" in input_cmd:
                     for cmd in input_cmd["extra_commands"]:
                         # print(f"Running extra command: {cmd}")
@@ -226,7 +232,10 @@ def execute_methods(methods: dict, ds: Dataset, algo: AbstractAlgorithm, step=Fa
         except Exception as e:
             print(
                 colors.color(
-                    "Cannot execute the method: " + test["method"] + " because  " + str(e),
+                    "Cannot execute the method: "
+                    + test["method"]
+                    + " because  "
+                    + str(e),
                     fg="red",
                 )
             )
@@ -317,14 +326,14 @@ def install(algorithm, build_arg):
         # stop execution
         return 1
 
-    if f'df-benchmarks-{algorithm}' in images:
-        print('Algorithm image already built')
-        
+    if f"df-benchmarks-{algorithm}" in images:
+        print("Algorithm image already built")
+
     else:
         try:
             install_status = [build(tag, build_arg) for tag in tags]
         except Exception as e:
             print(e)
             return 1
-        print('\n\nInstall Status:\n' + '\n'.join(str(algo) for algo in install_status))
+        print("\n\nInstall Status:\n" + "\n".join(str(algo) for algo in install_status))
     return 0
