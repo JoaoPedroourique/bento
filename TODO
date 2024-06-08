@@ -12,7 +12,13 @@
 [x] aprofundar nas libs
 [x] adicionar spark e vaex
 [] começar a analisar resultados, criar visualizações
+ - problemas:
+    - to_csv distorce resultados por levar muito tempo pra todos. Decidir como explorar
+    - drop_duplicates pro vaex: https://github.com/vaexio/vaex/pull/1623
+    - resultados do koalas estão surpreendentemente ruins, pra tudo
+    - calc_column para pandas e modin, avaliar implementação
 [] adicionar rapids
 [] explorar uso de GPUs
 [] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
 [] explorar uso de diversas máquinas
+
