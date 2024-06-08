@@ -12,11 +12,11 @@ DATASETS=("small_air" "medium_air" "big_air", "great_air")
 PIPELINE_FLAGS=("--pipeline" "--pipeline-step" "")
 
 # Loop over each algorithm
-for ALGORITHM in "${ALGORITHMS[@]}"; do
+for PIPELINE_FLAG in "${PIPELINE_FLAGS[@]}"; do
     # Loop over each dataset
     for DATASET in "${DATASETS[@]}"; do
         # Loop over each pipeline flag
-        for PIPELINE_FLAG in "${PIPELINE_FLAGS[@]}"; do
+        for ALGORITHM in "${ALGORITHMS[@]}"; do
             # for rapids, check if the NVIDIA Docker runtime is available
             if docker info --format '{{.Runtimes.nvidia}}' &> /dev/null; then
                 RUNTIME="--runtime=nvidia"
