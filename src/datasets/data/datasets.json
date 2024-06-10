@@ -1,70 +1,130 @@
 {
-  "test_air":{
+  "test_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":1000
+    "max_rows": 1000
   },
-  "small_air":{
+  "small_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":1000000
+    "max_rows": 1000000
   },
-  "medium_air":{
+  "medium_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":10000000
+    "max_rows": 10000000
   },
-  "big_air":{
+  "big_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":20000000
+    "max_rows": 20000000
   },
-  "great_air":{
+  "great_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz",
-    "max_rows":30000000
+    "max_rows": 30000000
   },
-  "full_air":{
+  "40m_air": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 40000000
+  },
+  "50m_air": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 50000000
+  },
+  "60m_air": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 60000000
+  },
+  "70m_air": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 70000000
+  },
+  "full_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
     "type": "csv.gz"
   },
-  "test_no_out":{
+  "test_no_out": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_no_out_pipe.json",
     "type": "csv.gz",
-    "max_rows":1000
+    "max_rows": 1000
   },
-  "small_no_out":{
+  "small_no_out": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_no_out_pipe.json",
     "type": "csv.gz",
-    "max_rows":1000000
+    "max_rows": 1000000
   },
-  "medium_no_out":{
+  "medium_no_out": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_no_out_pipe.json",
     "type": "csv.gz",
-    "max_rows":10000000
+    "max_rows": 10000000
   },
-  "big_no_out":{
+  "big_no_out": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_no_out_pipe.json",
     "type": "csv.gz",
-    "max_rows":20000000
+    "max_rows": 20000000
   },
-  "great_no_out":{
+  "great_no_out": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_no_out_pipe.json",
     "type": "csv.gz",
-    "max_rows":30000000
+    "max_rows": 30000000
   },
-  "full_no_out":{
+  "40m_no_out": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_no_out_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 40000000
+  },
+  "50m_no_out": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_no_out_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 50000000
+  },
+  "60m_no_out": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_no_out_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 60000000
+  },
+  "70m_no_out": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_no_out_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 70000000
+  },
+  "80m_no_out": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_no_out_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 80000000
+  },
+  "90m_no_out": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/airline_no_out_pipe.json",
+    "type": "csv.gz",
+    "max_rows": 90000000
+  },
+  "full_no_out": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_no_out_pipe.json",
     "type": "csv.gz"
