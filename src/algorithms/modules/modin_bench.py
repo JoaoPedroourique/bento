@@ -4,7 +4,7 @@ from typing import Union
 import os
 
 os.environ["RAY_SCHEDULER_EVENTS"] = "0"
-# os.environ["MODIN_ENGINE"] = "dask"  # Modin will use Ray
+os.environ["MODIN_ENGINE"] = "dask"  # Modin will use dask
 # os.environ["MODIN_ENGINE"] = "ray"  # Modin will use Ray
 import modin.pandas as pd
 
