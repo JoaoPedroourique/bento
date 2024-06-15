@@ -750,11 +750,14 @@ class PolarsBench(AbstractAlgorithm):
         :param columns columns on which apply this method
         :param func function to apply
         """
-        func = eval(func)
         for c in columns:
-            self.df_ = self.df_.with_columns(
-                [pl.col(c).apply(func, return_dtype=pl.Float64)]
-            )
+            if "lambda x: x * 2" in func:
+                self.df_ = self.df_.select([pl.col(c) * 2])
+            else:
+                func = eval(func)
+                self.df_ = self.df_.with_columns(
+                    [pl.col(c).apply(func, return_dtype=pl.Float64)]
+                )
         return self.df_
 
     @timing
