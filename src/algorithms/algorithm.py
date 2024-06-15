@@ -5,7 +5,6 @@ from src.datasets.dataset import Dataset
 import glob
 
 
-
 class AbstractAlgorithm(abc.ABC):
     name: str
     constructor_args: dict
@@ -90,16 +89,17 @@ class AbstractAlgorithm(abc.ABC):
         dfs = []
         for f in all_files:
             # Calculate the number of rows to read from this file
-            rows_to_read = max_rows - total_rows
-            if max_rows is not None and rows_to_read <= 0:
-                break
+            if max_rows:
+                rows_to_read = max_rows - total_rows
+                if rows_to_read <= 0:
+                    break
+                kwargs["nrows"] = rows_to_read
 
             # Read the file (or part of it)
-            kwargs["nrows"] = rows_to_read
             df = read_function(f, **kwargs)
 
             # Update the total number of rows read
-            if self.name == 'spark':
+            if self.name == "spark":
                 # spark dfs have no len()
                 total_rows += df.count()
             else:
