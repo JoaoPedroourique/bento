@@ -12,11 +12,17 @@
 [x] aprofundar nas libs
 [x] adicionar spark e vaex
 [] começar a analisar resultados, criar visualizações
- - problemas:
-    - to_csv distorce resultados por levar muito tempo pra todos. Decidir como explorar
-    - drop_duplicates pro vaex: https://github.com/vaexio/vaex/pull/1623
-    - resultados do koalas estão surpreendentemente ruins, pra tudo
-    - calc_column para pandas e modin, avaliar implementação
+    [x] drop_duplicates pro vaex: https://github.com/vaexio/vaex/pull/1623 -> dropado
+    [x] resultados do koalas estão surpreendentemente ruins, pra tudo -> a princípio descartei koalas
+    [x] calc_column para pandas e modin, avaliar implementação -> parecem ok
+    [x] modin estranho -> correção da engine
+    [x] polars estranho -> correção método edit q estava levantando warning
+    [] modificar registro de resultados para ter ids de cada run, o script slurm, consigo usar job id?
+    [] to_csv distorce resultados por levar muito tempo pra todos. Decidir como explorar
+    [] resolver warning de dtypes modin -> melhoraria resultados?
+    [] colocar makespan no lado direito da barra do gantt
+    [] medir variância das execuções e, após garantir que ela esteja controlada, fazer gráficos a partir da run mais representativa (média)
+
 [] adicionar rapids
 [] explorar uso de GPUs
 [] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
