@@ -14,6 +14,8 @@ from src.algorithms.utils import timing
 from src.datasets.dataset import Dataset
 from src.algorithms.algorithm import AbstractAlgorithm
 from haversine import haversine
+import psutil
+from .dtypes_for_reading import dtypes
 
 
 class ModinBench(AbstractAlgorithm):
@@ -57,10 +59,19 @@ class ModinBench(AbstractAlgorithm):
                 os.environ["RAY_verbose_spill_logs"] = "0"
 
             if self.type == "dask":
+                # Get the total memory in bytes
+                total_memory = psutil.virtual_memory().total
+
+                # Convert it to GB
+                total_memory_gb = total_memory / (1024**3)
+
+                # Set the memory limit to 70% of the total memory
+                memory_limit = int(total_memory_gb * 0.75)
+                print(f"running with memory limit: {memory_limit}GB")
                 from distributed import Client, LocalCluster
 
                 # start a local Dask client
-                self.client = Client(processes=True, memory_limit=None)
+                self.client = Client(processes=True, memory_limit=f"{memory_limit}GB")
                 # wait the cluster is ready
                 self.client.wait_for_workers(1)
                 # silence all ERROR logs
@@ -140,6 +151,7 @@ class ModinBench(AbstractAlgorithm):
         """
         Read a csv file
         """
+        kwargs["dtype"] = dtypes
         self.df_ = pd.read_csv(path, **kwargs)
         return self.df_
 
