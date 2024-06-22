@@ -24,12 +24,20 @@ class ModinBench(AbstractAlgorithm):
     ds_: Dataset = None
     name = "modin"
 
-    def __init__(self, mem: str = None, cpu: int = None, type="dask", pipeline=False):
+    def __init__(
+        self,
+        mem: str = None,
+        cpu: int = None,
+        type="dask",
+        pipeline=False,
+        machine_name="NOT_PROVIDED",
+    ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
         self.name = f"{self.name}_{type}"
         self.type = type
+        self.machine_name = machine_name
 
         import modin.config as cfg
         import math

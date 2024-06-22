@@ -9,6 +9,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--algorithm", help="Algorithm name", required=True)
+    parser.add_argument("--machine", help="Machine name", required=True)
     parser.add_argument(
         "--algorithm_params", help="Algorithm configuration parameters", required=False
     )
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         if ds is None:
             raise Exception(f"Dataset {args.dataset} not found")
         else:
-            print(f"running {args.algorithm} on {ds.name}")
+            print(f"running {args.algorithm} on {ds.name}, machine {args.machine}")
             if ds.dataset_attribute.max_rows:
                 print(f"max rows: {ds.dataset_attribute.max_rows}")
 
@@ -76,6 +77,7 @@ if __name__ == "__main__":
             args.algorithm_params,
             args.pipeline,
             args.pipeline_step,
+            args.machine,
         )
 
     else:
@@ -100,4 +102,5 @@ if __name__ == "__main__":
             args.mem_limit,
             args.pipeline,
             args.pipeline_step,
+            args.machine,
         )

@@ -19,12 +19,18 @@ class PandasBench(AbstractAlgorithm):
 
     # name = "pandas"
     def __init__(
-        self, name: str, mem: str = None, cpu: int = None, pipeline: bool = False
+        self,
+        name: str,
+        mem: str = None,
+        cpu: int = None,
+        pipeline: bool = False,
+        machine_name="NOT_PROVIDED",
     ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
         self.name = name
+        self.machine_name = machine_name
 
     def backup(self):
         """

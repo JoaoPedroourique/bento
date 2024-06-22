@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=tcc_joao
 #SBATCH --partition=tupi
-#SBATCH --nodelist=tupi4
+#SBATCH --nodelist=tupi3
 #SBATCH --nodes=1
-#SBATCH --time=03:00:00
+#SBATCH --time=06:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=errors/%x_%j.err
-
-ALGORITHMS=("spark" "pandas" "polars" "modin_dask" "koalas" "vaex")
-DATASETS=("small_no_out" "medium_no_out" "big_no_out", "great_no_out")
+MACHINE="tupi3"
+ALGORITHMS=("spark" "vaex")
+DATASETS=("70m_no_out" "80m_no_out" "90m_no_out" "full_no_out")
 PIPELINE_FLAGS=("--pipeline" "--pipeline-step" "")
 
 # Loop over each algorithm
@@ -17,20 +17,13 @@ for PIPELINE_FLAG in "${PIPELINE_FLAGS[@]}"; do
     for DATASET in "${DATASETS[@]}"; do
         # Loop over each pipeline flag
         for ALGORITHM in "${ALGORITHMS[@]}"; do
-            # for rapids, check if the NVIDIA Docker runtime is available
-            if docker info --format '{{.Runtimes.nvidia}}' &> /dev/null; then
-                RUNTIME="--runtime=nvidia"
-            else
-                RUNTIME=""
-            fi
             docker run \
-                $RUNTIME \
                 -v "$(pwd)":/app:rw \
                 -v "$(pwd)/src":/app/src:ro \
                 -v "$(pwd)/datasets":/app/datasets:ro \
                 -v "$(pwd)/new_results":/app/new_results:rw \
                 df-benchmarks-$ALGORITHM \
-                --algorithm $ALGORITHM --dataset $DATASET --locally $PIPELINE_FLAG
+                --algorithm $ALGORITHM --dataset $DATASET --locally $PIPELINE_FLAG --machine $MACHINE
         done
     done
 done

@@ -20,10 +20,17 @@ class PolarsBench(AbstractAlgorithm):
     ds_: Dataset = None
     name = "polars"
 
-    def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
+    def __init__(
+        self,
+        mem: str = None,
+        cpu: int = None,
+        pipeline: bool = False,
+        machine_name="NOT_PROVIDED",
+    ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
+        self.machine_name = machine_name
 
     def backup(self):
         """

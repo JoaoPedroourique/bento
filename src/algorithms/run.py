@@ -16,7 +16,11 @@ from src.datasets.dataset import Dataset
 
 
 def run_algo_locally(
-    algorithm, dataset, algorithm_params=None, cpu_limit="1", mem_limit=None
+    algorithm,
+    dataset,
+    algorithm_params=None,
+    cpu_limit="1",
+    mem_limit=None,
 ):
     """
     Runs an algorithm on local machine
@@ -52,6 +56,7 @@ def run_algo_docker(
     mem_limit=None,
     pipeline=False,
     step=False,
+    machine_name="NOT_PROVIDED",
 ):
     """
     Runs an algorithm inside a docker container
@@ -158,6 +163,7 @@ def run_pipeline_locally(
     algorithm_params=None,
     pipeline=False,
     step=False,
+    machine_name="NOT_PROVIDED",
 ):
     """run the pipeline for the givrne algorithm and dataset
 
@@ -185,7 +191,12 @@ def run_pipeline_locally(
         algorithm_params = set_algorithm_params(algorithm_params, mem_limit, cpu_limit)
 
     algo = factory.build_algorithm(
-        algorithm, mem_limit, cpu_limit, conf=algorithm_params, pipeline=pipeline
+        algorithm,
+        mem_limit,
+        cpu_limit,
+        conf=algorithm_params,
+        pipeline=pipeline,
+        machine_name=machine_name,
     )
 
     # Create log file
@@ -234,6 +245,7 @@ def run_pipeline_locally(
             pipeline,
             step,
             max_rows=ds.dataset_attribute.max_rows,
+            machine_name=machine_name,
         )
 
     elif step:
@@ -295,6 +307,7 @@ def run_pipeline_locally(
                 pipeline,
                 step,
                 max_rows=ds.dataset_attribute.max_rows,
+                machine_name=machine_name,
             )
         tracemalloc.stop()
     else:

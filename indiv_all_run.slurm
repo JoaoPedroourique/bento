@@ -13,7 +13,7 @@ DATASET="small_air"
 
 # Loop over each algorithm
 for ALGORITHM in "${ALGORITHMS[@]}"; do
-	# for rapids, check if the NVIDIA Docker runtime is available
+	
 	if docker info --format '{{.Runtimes.nvidia}}' &> /dev/null; then
 		RUNTIME="--runtime=nvidia"
 	else

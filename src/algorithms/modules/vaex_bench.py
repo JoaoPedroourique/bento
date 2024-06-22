@@ -20,10 +20,17 @@ class VaexBench(AbstractAlgorithm):
     name = "vaex"
     pipeline = False
 
-    def __init__(self, mem: str = None, cpu: int = None, pipeline: bool = False):
+    def __init__(
+        self,
+        mem: str = None,
+        cpu: int = None,
+        pipeline: bool = False,
+        machine_name="NOT_PROVIDED",
+    ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
+        self.machine_name = machine_name
 
     def set_df(self, df):
         """
@@ -101,29 +108,35 @@ class VaexBench(AbstractAlgorithm):
         return vx.from_json(path, **kwargs)
 
     def _cast_problematic_columns(self, df):
-        problematic_columns = ['CancellationCode', 'CarrierDelay',
-            'WeatherDelay', 'NASDelay', 'SecurityDelay', 'LateAircraftDelay'
+        problematic_columns = [
+            "CancellationCode",
+            "CarrierDelay",
+            "WeatherDelay",
+            "NASDelay",
+            "SecurityDelay",
+            "LateAircraftDelay",
         ]
-        cols_to_cast = [col for col in problematic_columns if col in df.get_column_names()]
+        cols_to_cast = [
+            col for col in problematic_columns if col in df.get_column_names()
+        ]
         for col in cols_to_cast:
             df[col] = df[col].astype(str)
         return df
-    
+
     def read_csv(self, path, **kwargs):
         """
         Read a csv file
         :param path: path of the file to load
         :param kwargs: extra arguments
         """
-        nrows =  kwargs.pop('nrows', None)
+        nrows = kwargs.pop("nrows", None)
         # vaex does not directly support reading only a certain number of rows
         df = vx.from_csv_arrow(path, **kwargs)
         # Enforce datatype for columns with null datatypes
-        
 
         if nrows is not None:
             df = df[:nrows]
-        
+
         df = self._cast_problematic_columns(df)
         return df
 
@@ -370,7 +383,7 @@ class VaexBench(AbstractAlgorithm):
         """
         df_copy = self.df_.copy()
         for c in self.get_columns():
-            if str(df_copy[c].dtype) in {"date32[day]", "time32[s]", 'null'}:
+            if str(df_copy[c].dtype) in {"date32[day]", "time32[s]", "null"}:
                 df_copy[c] = df_copy[c].astype(str)
 
         return df_copy.describe(strings=False)
@@ -959,7 +972,10 @@ class VaexBench(AbstractAlgorithm):
 
         if not os.path.exists("./pipeline_output"):
             os.makedirs("./pipeline_output")
-        self.df_.export_many(f"./pipeline_output/{self.name}"+"_chunk-{i:02}output.csv", chunk_size=100000)
+        self.df_.export_many(
+            f"./pipeline_output/{self.name}" + "_chunk-{i:02}output.csv",
+            chunk_size=100000,
+        )
 
     @timing
     def to_parquet(self, path="./pipeline_output/vaex_loan_output.parquet", **kwargs):

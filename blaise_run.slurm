@@ -1,15 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=tcc_joao
-#SBATCH --partition=tupi
-#SBATCH --nodelist=tupi3
+#SBATCH --partition=blaise
+#SBATCH --nodelist=blaise
 #SBATCH --nodes=1
-#SBATCH --time=03:00:00
+#SBATCH --time=06:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=errors/%x_%j.err
-
-MACHINE="tupi3"
-ALGORITHMS=("spark" "pandas" "polars" "modin_dask" "koalas" "vaex")
-DATASETS=("small_air" "medium_air" "big_air", "great_air")
+MACHINE="blaise"
+ALGORITHMS=("spark" "vaex")
+DATASETS=("70m_no_out" "80m_no_out" "90m_no_out" "full_no_out")
 PIPELINE_FLAGS=("--pipeline" "--pipeline-step" "")
 
 # Loop over each algorithm

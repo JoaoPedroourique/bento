@@ -7,7 +7,12 @@ from src.algorithms.algorithm import AbstractAlgorithm
 class AlgorithmsFactory(ModelFactory[Any]):
     @staticmethod
     def build_algorithm(
-        algorithm_name: str, mem: str = None, cpu: int = None, conf=None, pipeline=False
+        algorithm_name: str,
+        mem: str = None,
+        cpu: int = None,
+        conf=None,
+        pipeline=False,
+        machine_name="NOT_PROVIDED",
     ) -> AbstractAlgorithm:
         if conf is None:
             conf = {}
@@ -24,27 +29,41 @@ class AlgorithmsFactory(ModelFactory[Any]):
             elif algorithm_name == "modin_dask":
                 from src.algorithms.modules.modin_bench import ModinBench
 
-                return ModinBench(mem, cpu, type="dask", pipeline=pipeline)
+                return ModinBench(
+                    mem, cpu, type="dask", pipeline=pipeline, machine_name=machine_name
+                )
 
             elif algorithm_name == "modin_hdk":
                 from src.algorithms.modules.modin_bench import ModinBench
 
-                return ModinBench(mem, cpu, type="hdk", pipeline=pipeline)
+                return ModinBench(
+                    mem, cpu, type="hdk", pipeline=pipeline, machine_name=machine_name
+                )
 
             elif algorithm_name == "modin_ray":
                 from src.algorithms.modules.modin_bench import ModinBench
 
-                return ModinBench(mem, cpu, type="ray", pipeline=pipeline)
+                return ModinBench(
+                    mem, cpu, type="ray", pipeline=pipeline, machine_name=machine_name
+                )
 
             elif algorithm_name == "modin_unidist":
                 from src.algorithms.modules.modin_bench import ModinBench
 
-                return ModinBench(mem, cpu, type="unidist", pipeline=pipeline)
+                return ModinBench(
+                    mem,
+                    cpu,
+                    type="unidist",
+                    pipeline=pipeline,
+                    machine_name=machine_name,
+                )
 
             elif algorithm_name in {"pandas", "pandas20"}:
                 from src.algorithms.modules.pandas_bench import PandasBench
 
-                return PandasBench(algorithm_name, mem, cpu, pipeline)
+                return PandasBench(
+                    algorithm_name, mem, cpu, pipeline, machine_name=machine_name
+                )
 
             elif algorithm_name == "pyspark_pandas":
                 from src.algorithms.modules.pandas_pyspark_bench import (
@@ -61,7 +80,7 @@ class AlgorithmsFactory(ModelFactory[Any]):
             elif algorithm_name == "polars":
                 from src.algorithms.modules.polars_bench import PolarsBench
 
-                return PolarsBench(mem, cpu, pipeline)
+                return PolarsBench(mem, cpu, pipeline, machine_name=machine_name)
 
             elif algorithm_name == "polars_big":
                 from src.algorithms.modules.polars_bench import PolarsBench
@@ -76,12 +95,18 @@ class AlgorithmsFactory(ModelFactory[Any]):
             elif algorithm_name == "spark":
                 from src.algorithms.modules.spark_bench import SparkBench
 
-                return SparkBench(mem=mem, cpu=cpu, conf=conf, pipeline=pipeline)
+                return SparkBench(
+                    mem=mem,
+                    cpu=cpu,
+                    conf=conf,
+                    pipeline=pipeline,
+                    machine_name=machine_name,
+                )
 
             elif algorithm_name == "vaex":
                 from src.algorithms.modules.vaex_bench import VaexBench
 
-                return VaexBench(mem, cpu, pipeline)
+                return VaexBench(mem, cpu, pipeline, machine_name=machine_name)
 
             raise AssertionError("Algorithm type is not valid.")
         except AssertionError as e:

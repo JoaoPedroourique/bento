@@ -22,6 +22,7 @@ def save_to_csv(
     pipeline=False,
     step=False,
     max_rows=None,
+    machine_name="NOT_PROVIDED",
 ):
     """Save the execution stats to csv file
 
@@ -43,7 +44,7 @@ def save_to_csv(
     else:
         folder = f"{algo.ds_.name}/{algo.name}_mem{algo.mem_}_rows{max_rows}"
 
-    path_name = "new_results"
+    path_name = f"new_results/{machine_name}"
     out_path = os.path.join(path_name, folder)
     if not os.path.exists(out_path):
         print(f"Creating folder: {out_path}")
@@ -104,7 +105,14 @@ def timing(f):
 
         # Stop tracking memory usage and get the memory usage
         # memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024**2
-        save_to_csv(f.__name__, args[0], elapsed_time, memory_used, ram)
+        save_to_csv(
+            f.__name__,
+            args[0],
+            elapsed_time,
+            memory_used,
+            ram,
+            machine_name=args[0].machine_name,
+        )
 
         return result
 

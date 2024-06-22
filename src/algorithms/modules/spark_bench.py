@@ -54,11 +54,13 @@ class SparkBench(AbstractAlgorithm):
         mem: str = None,
         cpu: int = None,
         pipeline: bool = False,
+        machine_name="NOT_PROVIDED",
         **kwargs,
     ):
         self.mem_ = mem
         self.cpu_ = cpu
         self.pipeline = pipeline
+        self.machine_name = machine_name
         # Initiate the spark Session inside the constructor
         # build a Spark Session,
         # It takes several parameters and return SparkSession create new one or return existing session
@@ -138,7 +140,7 @@ class SparkBench(AbstractAlgorithm):
         os.system("java -XX:+PrintFlagsFinal -version | grep -Ei 'maxheapsize|maxram'")
         os.system("nproc --all")
         os.system("grep MemTotal /proc/meminfo")
-                  
+
         if data_format == "csv" or data_format == "csv.gz":
             read_function = self.read_csv
         elif data_format == "parquet":
@@ -349,20 +351,22 @@ class SparkBench(AbstractAlgorithm):
         :param columns columns to encode
         """
         for column in columns:
-            indexer = StringIndexer(inputCol=column, outputCol=column+"_index")
+            indexer = StringIndexer(inputCol=column, outputCol=column + "_index")
             self.df_ = indexer.fit(self.df_).transform(self.df_)
 
-            encoder = OneHotEncoder(inputCol=column+"_index", outputCol=column+"_vec")
+            encoder = OneHotEncoder(
+                inputCol=column + "_index", outputCol=column + "_vec"
+            )
             self.df_ = encoder.fit(self.df_).transform(self.df_)
 
             self.df_ = self.df_.drop(column)
-            self.df_ = self.df_.drop(column+"_index")
-            self.df_ = self.df_.drop(column+"_vec")
+            self.df_ = self.df_.drop(column + "_index")
+            self.df_ = self.df_.drop(column + "_vec")
 
         return self.df_
 
     @timing
-    def locate_null_values(self, column:Union[list[str],'all']):
+    def locate_null_values(self, column: Union[list[str], "all"]):
         """
         Returns the rows of the dataframe which contains
         null value in the provided column.
@@ -437,7 +441,7 @@ class SparkBench(AbstractAlgorithm):
         for c in dtypes:
             # t = eval(dtypes[c])
             self.df_ = self.df_.withColumn(c, self.df_[c].cast(dtypes[c]))
-            
+
         return self.df_
 
     @timing
@@ -598,12 +602,16 @@ class SparkBench(AbstractAlgorithm):
         """
         if isinstance(columns, list):
             if len(columns) != 1:
-                raise ValueError("Pivot operation can only be performed on one column at a time.")
+                raise ValueError(
+                    "Pivot operation can only be performed on one column at a time."
+                )
             columns = columns[0]
 
         df_copy = self.df_.select("*")
-        if values =="CarrierDelay":
-            df_copy = df_copy.withColumn("CarrierDelay", fn.col("CarrierDelay").cast("int"))
+        if values == "CarrierDelay":
+            df_copy = df_copy.withColumn(
+                "CarrierDelay", fn.col("CarrierDelay").cast("int")
+            )
         df_pivot = df_copy.groupBy(index).pivot(columns)
 
         if aggfunc == "sum":
@@ -891,9 +899,9 @@ class SparkBench(AbstractAlgorithm):
         :param columns columns on which apply this method
         :param func function to apply
         """
-        if ret_type=='float':
-            ret_type=DoubleType() 
-        else: 
+        if ret_type == "float":
+            ret_type = DoubleType()
+        else:
             raise ValueError("no other types have been set")
         my_udf = fn.udf(f=eval(func), returnType=ret_type)
         for c in columns:
@@ -986,8 +994,9 @@ class SparkBench(AbstractAlgorithm):
         :param kwargs extra parameters
         """
         # path = path.replace("NAME", self.name)a
-        self.df_\
-        .write.format("csv").mode("overwrite").option("header", "true").save(path)
+        self.df_.write.format("csv").mode("overwrite").option("header", "true").save(
+            path
+        )
 
         # except Exception as e:
         #     print(e)
