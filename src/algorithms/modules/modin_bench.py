@@ -73,8 +73,8 @@ class ModinBench(AbstractAlgorithm):
                 # Convert it to GB
                 total_memory_gb = total_memory / (1024**3)
 
-                # Set the memory limit to 70% of the total memory
-                memory_limit = int(total_memory_gb * 0.75)
+                # Set the memory limit to 85% of the total memory
+                memory_limit = int(total_memory_gb * 0.85)
                 print(f"running with memory limit: {memory_limit}GB")
                 from distributed import Client, LocalCluster
 
@@ -569,10 +569,15 @@ class ModinBench(AbstractAlgorithm):
         Calculate the new column col_name by applying
         the function f to the whole dataframe
         """
+        import numpy as np
+
         if not columns:
             columns = self.get_columns()
         f = eval(f)
-        self.df_[col_name] = self.df_[columns].apply(f, axis=1)
+        # using a default operation so vectorization can be used
+        self.df_[col_name] = np.where(
+            (self.df_[columns[0]] == "") | (self.df_[columns[1]] == ""), "No", "Yes"
+        )
         return self.df_
 
     @timing

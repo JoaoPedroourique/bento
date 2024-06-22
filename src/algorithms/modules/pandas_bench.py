@@ -524,11 +524,16 @@ class PandasBench(AbstractAlgorithm):
         Calculate the new column col_name by applying
         the function f to the whole dataframe
         """
+        import numpy as np
+
         if not columns:
             columns = self.get_columns()
         if type(f) == str:
             f = eval(f)
-        self.df_[col_name] = self.df_[columns].apply(f, axis=1)
+        # using a default operation so vectorization can be used
+        self.df_[col_name] = np.where(
+            (self.df_[columns[0]] == "") | (self.df_[columns[1]] == ""), "No", "Yes"
+        )
         return self.df_
 
     @timing

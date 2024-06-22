@@ -85,6 +85,8 @@ class PolarsBench(AbstractAlgorithm):
             cast_dict = {
                 "CRSElapsedTime": pl.Float64,
                 "CancellationCode": pl.Utf8,
+                "Cancelled": pl.Utf8,
+                "UniqueCarrier": pl.Utf8,
                 "CarrierDelay": pl.Float64,
                 "WeatherDelay": pl.Float64,
                 "NASDelay": pl.Float64,
@@ -361,7 +363,7 @@ class PolarsBench(AbstractAlgorithm):
         :param dtypes a dictionary that provides for ech column to cast the new datatype
         For example  {'col_name': pl.UInt32}
         """
-        self.df_.cast(dtypes).collect()
+        self.df_.cast(dtypes)
 
         return self.df_
 
@@ -638,11 +640,13 @@ class PolarsBench(AbstractAlgorithm):
         if isinstance(f, str):
             f = eval(f)
 
-        self.df_ = self.df_.with_columns(pl.struct(columns).apply(f).alias(col_name))
-        # new_col = selected.apply(f)
-        # print(new_col.collect())
-        # print(self.df_.with_columns(pl.struct(columns).apply(f)).collect())
-        # self.df_ = self.df_.with_columns(pl.struct(columns).apply(f).alias(col_name))
+        # using a default operation so vectorization can be used
+        self.df_ = self.df_.with_columns(
+            pl.when((pl.col(columns[0]) == "") | (pl.col(columns[1]) == ""))
+            .then("No")
+            .otherwise("Yes")
+            .alias(col_name)
+        )
         return self.df_
 
     @timing
@@ -661,10 +665,13 @@ class PolarsBench(AbstractAlgorithm):
         :param how type of join (inner, left, right, outer)
         :param kwargs extra parameters
         """
+        schema = other.schema
+        for column, dtype in schema.items():
+            print(f"Column: {column}, Dtype: {dtype}")
         self.df_ = self.df_.join(
             other, left_on=left_on, right_on=right_on, how=how, **kwargs
         )
-        return self.df_.collect()
+        return self.df_
 
     @timing
     def groupby(self, columns, f):
@@ -863,7 +870,7 @@ class PolarsBench(AbstractAlgorithm):
         query: list[tuple] = ast.literal_eval(query)
         # create a list of conditions
         conditions = [pl.col(col) == value for col, value in query]
-        return self.df_.filter(*conditions).collect()
+        return self.df_.filter(*conditions)
 
     def force_execution(self):
         self.df_.collect()
