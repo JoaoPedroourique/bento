@@ -264,6 +264,12 @@
         "columns": "UniqueCarrier",
         "values": "CarrierDelay",
         "aggfunc": "sum"
+      },
+      "input_modin_dask": {
+        "index": ["Year", "Month"],
+        "columns": "UniqueCarrier",
+        "values": "CarrierDelay",
+        "aggfunc": "sum"
       }
     },
     {

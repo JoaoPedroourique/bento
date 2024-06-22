@@ -119,26 +119,26 @@
     {
       "method": "calc_column",
       "input": {
-        "col_name": "Cancelled",
+        "col_name": "NewCancelled",
         "columns": ["Cancelled", "CancellationCode"],
         "f": "lambda x: 'No' if x[1] == '' or x[0] == '' else 'Yes'"
       },
       "input_polars": {
-        "col_name": "Cancelled",
+        "col_name": "NewCancelled",
         "columns": ["Cancelled", "CancellationCode"],
         "f": "lambda x: 'No' if x['CancellationCode'] == '' or x['Cancelled'] == '' else 'Yes'"
       },
       "input_koalas": {
-        "col_name": "Cancelled",
+        "col_name": "NewCancelled",
         "f": "lambda x: 'No' if x['CancellationCode'] == '' or x['Cancelled'] == '' else 'Yes'"
       },
       "input_vaex": {
-        "col_name": "Cancelled",
+        "col_name": "NewCancelled",
         "columns": ["Cancelled", "CancellationCode"],
         "f": "lambda x, y: 'No' if y == '' or x =='' else 'Yes'"
       },
       "input_spark": {
-        "col_name": "Cancelled",
+        "col_name": "NewCancelled",
         "columns": ["Cancelled", "CancellationCode"],
         "f": "lambda x, y: 'No' if y == '' or x =='' else 'Yes'"
       }
@@ -264,6 +264,12 @@
         "columns": "UniqueCarrier",
         "values": "CarrierDelay",
         "aggfunc": "sum"
+      },
+      "input_modin_dask": {
+        "index": ["Year", "Month"],
+        "columns": "UniqueCarrier",
+        "values": "CarrierDelay",
+        "aggfunc": "sum"
       }
     },
     {
@@ -281,7 +287,7 @@
     {
       "method": "categorical_encoding",
       "input": {
-        "columns": ["Origin", "Dest"]
+        "columns": ["Year", "Month"]
       }
     },
     {

@@ -481,8 +481,8 @@ class ModinBench(AbstractAlgorithm):
         and the dictionary to aggregate ("sum", "mean", "count") the values for each column: {"col1": "sum"}
         (see pivot_table in pandas documentation)
         """
-        return pd.pivot_table(
-            self.df_, index=index, values=values, columns=columns, aggfunc=aggfunc
+        return self.df_.pivot_table(
+            index=index, values=values, columns=columns, aggfunc=aggfunc
         ).reset_index()
 
     @timing
