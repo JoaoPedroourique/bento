@@ -11,7 +11,5 @@ docker build --rm -t df-benchmarks -f install/Dockerfile .
 docker build  --rm -t df-benchmarks-modin_dask -f install/Dockerfile.modin_dask .
 docker build  --rm -t df-benchmarks-pandas -f install/Dockerfile.pandas .
 docker build  --rm -t df-benchmarks-polars -f install/Dockerfile.polars .
-docker build  --rm -t df-benchmarks-koalas -f install/Dockerfile.koalas .
-docker build  --rm -t df-benchmarks-rapids -f install/Dockerfile.rapids .
 docker build  --rm -t df-benchmarks-spark -f install/Dockerfile.spark .
 docker build  --rm -t df-benchmarks-vaex -f install/Dockerfile.vaex .
