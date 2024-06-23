@@ -339,7 +339,7 @@
     {
       "method": "set_content_case",
       "input": {
-        "columns": ["UniqueCarrier"],
+        "columns": ["Dest"],
         "case": "upper"
       }
     },
@@ -375,16 +375,8 @@
   ],
   "output": [
     {
-      "method": "to_csv",
-      "input": {
-        "sep": ","
-      },
-      "input_polars": {
-        "separator": ","
-      },
-      "input_koalas": {
-        "path": "pipeline_output/"
-      }
+      "method": "to_parquet",
+      "input": {}
     }
   ]
 }

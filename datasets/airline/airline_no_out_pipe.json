@@ -339,7 +339,7 @@
     {
       "method": "set_content_case",
       "input": {
-        "columns": ["UniqueCarrier"],
+        "columns": ["Dest"],
         "case": "upper"
       }
     },
