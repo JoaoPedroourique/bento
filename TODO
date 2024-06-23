@@ -17,14 +17,16 @@
     [x] calc_column para pandas e modin, avaliar implementação -> parecem ok
     [x] modin estranho -> correção da engine
     [x] polars estranho -> correção método edit q estava levantando warning
-    [] modificar registro de resultados para ter ids de cada run, o script slurm, consigo usar job id?
-    [] to_csv distorce resultados por levar muito tempo pra todos. Decidir como explorar
-    [] resolver warning de dtypes modin -> melhoraria resultados?
+    [x] modificar registro de resultados para ter ids de cada run, o script slurm -> separei resultados por máquina
+    [x] to_csv distorce resultados por levar muito tempo pra todos -> usar parquet no output
+    [x] resolver warning de dtypes modin -> melhoraria resultados?
     [] colocar makespan no lado direito da barra do gantt
     [] medir variância das execuções e, após garantir que ela esteja controlada, fazer gráficos a partir da run mais representativa (média)
+    - sinfo | grep idle
+    - salloc -p tupi -w tupi3 -t 24:00:00
+    - ssh tupi3
+    - https://docs.google.com/document/d/1mTrDSVC4sMwGi5ZJKdUSPPg85OACjTiEYJ2CiO9lSrc/edit#heading=h.bejgxfx3orf7
 
-[] adicionar rapids
-[] explorar uso de GPUs
-[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
 [] explorar uso de diversas máquinas
+[] criar exemplos de pipelines com combinações de diferentes operações e compará-las entre as libs? 
 
