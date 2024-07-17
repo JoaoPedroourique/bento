@@ -170,6 +170,19 @@
           "carriers=mpd.DataFrame(carriers)"
         ]
       },
+      "input_modin_ray": {
+        "other": "carriers",
+        "left_on": "UniqueCarrier",
+        "right_on": "Code",
+        "how": "left",
+        "req_compile": ["other"],
+        "extra_commands": [
+          "import pandas as pd",
+          "carriers=pd.read_csv('datasets/airline/carriers.csv', dtype='object')",
+          "import modin.pandas as mpd",
+          "carriers=mpd.DataFrame(carriers)"
+        ]
+      },
       "input_polars": {
         "other": "carriers",
         "left_on": "UniqueCarrier",
@@ -266,6 +279,12 @@
         "aggfunc": "sum"
       },
       "input_modin_dask": {
+        "index": ["Year", "Month"],
+        "columns": "UniqueCarrier",
+        "values": "CarrierDelay",
+        "aggfunc": "sum"
+      },
+      "input_modin_ray": {
         "index": ["Year", "Month"],
         "columns": "UniqueCarrier",
         "values": "CarrierDelay",

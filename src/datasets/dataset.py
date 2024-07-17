@@ -8,15 +8,15 @@ from dataclasses import dataclass
 
 class DatasetAttribute(BaseModel):
     path: str
-    test: Optional[str]
+    test: Optional[str] = None
     pipe: str
     type: str
-    max_rows: Optional[int]
+    max_rows: Optional[int] = None
 
 
 class Dataset(BaseModel):
-    name: Optional[str]
-    dataset_attribute: Optional[DatasetAttribute]
+    name: Optional[str] = None
+    dataset_attribute: Optional[DatasetAttribute] = None
 
     def get_datasets(self):
         return self.dataset_attribute.dict()

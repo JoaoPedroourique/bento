@@ -1,10 +1,9 @@
 from pydantic import BaseModel
 from typing import Any
-from pydantic_factories import ModelFactory
 from src.algorithms.algorithm import AbstractAlgorithm
 
 
-class AlgorithmsFactory(ModelFactory[Any]):
+class AlgorithmsFactory:
     @staticmethod
     def build_algorithm(
         algorithm_name: str,
