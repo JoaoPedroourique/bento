@@ -1,0 +1,29 @@
+{
+    "Input": [
+      {
+        "method": "load_dataset",
+        "input": {
+          "sep": ",",
+          "compression": "infer"
+        }
+    },
+    {
+        "method": "load_dataset",
+        "input": {
+          "sep": ",",
+          "compression": "infer"
+        }
+    },
+    {
+        "method": "load_dataset",
+        "input": {
+          "sep": ",",
+          "compression": "infer"
+        }
+    },
+      {
+        "method": "force_execution",
+        "input": {}
+      }
+    ]
+}

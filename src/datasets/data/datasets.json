@@ -1,4 +1,10 @@
 {
+  "check_modin": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/check_modin_air.json",
+    "type": "csv.gz",
+    "max_rows": 40000000
+  },
   "test_air": {
     "path": "datasets/airline/*.csv.gz",
     "pipe": "datasets/airline/airline_pipe.json",
