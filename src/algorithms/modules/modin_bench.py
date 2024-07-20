@@ -1,14 +1,12 @@
 import re
 from typing import Union
-
+import time
 import os
 
-os.environ["RAY_SCHEDULER_EVENTS"] = "0"
-# os.environ["MODIN_ENGINE"] = "dask"  # Modin will use dask
+os.environ["MODIN_ENGINE"] = "dask"  # Modin will use dask
 # os.environ["MODIN_ENGINE"] = "ray"  # Modin will use Ray
 import modin.pandas as pd
 
-pd.DEFAULT_NPARTITIONS = 24
 from modin.pandas import DataFrame, Series
 from src.algorithms.utils import timing
 from src.datasets.dataset import Dataset
@@ -48,8 +46,8 @@ class ModinBench(AbstractAlgorithm):
             import modin.experimental.pandas as pd
 
         else:
+            print(f"Setting engine to {self.type}")
             cfg.Engine.put(self.type)
-            # cfg.NPartitions.put(int(math.sqrt(cpu)))
             print(f"NPartitions: {cfg.NPartitions.get()}")
             if self.type == "unidist":
                 import unidist.config as unidist_cfg
@@ -61,31 +59,15 @@ class ModinBench(AbstractAlgorithm):
                 import ray
 
                 ray.init(
-                    num_cpus=cpu,
-                    runtime_env={"env_vars": {"__MODIN_AUTOIMPORT_PANDAS__": "1"}},
+                    object_store_memory=(self.mem_ / 3) * 1024 * 1024 * 1024,
+                    num_cpus=self.cpu_,
+                    ignore_reinit_error=True,
                 )
+                import os
+
+                os.environ["RAY_SCHEDULER_EVENTS"] = "0"
+                os.environ["RAY_DEDUP_LOGS"] = "0"
                 os.environ["RAY_verbose_spill_logs"] = "0"
-
-            if self.type == "dask":
-                # Get the total memory in bytes
-                total_memory = psutil.virtual_memory().total
-
-                # Convert it to GB
-                total_memory_gb = total_memory / (1024**3)
-
-                # Set the memory limit to 85% of the total memory
-                memory_limit = int(total_memory_gb * 0.85)
-                print(f"running with memory limit: {memory_limit}GB")
-                from distributed import Client, LocalCluster
-
-                # start a local Dask client
-                self.client = Client(processes=True, memory_limit=f"{memory_limit}GB")
-                # wait the cluster is ready
-                self.client.wait_for_workers(1)
-                # silence all ERROR logs
-                import logging
-
-                logging.getLogger("distributed.utils_perf").setLevel(logging.ERROR)
 
     def backup(self):
         """
@@ -159,7 +141,22 @@ class ModinBench(AbstractAlgorithm):
         Read a csv file
         """
         kwargs["dtype"] = dtypes
+        start_time = time.time()
         self.df_ = pd.read_csv(path, **kwargs)
+        loading_time = time.time()
+        print(
+            f"read_csv no nrows command time: {(loading_time - start_time):.4f} seconds"
+        )
+        nrows = kwargs.get("nrows", None)
+        del kwargs["nrows"]
+
+        start_time = time.time()
+        self.df_ = pd.read_csv(path, **kwargs)
+        self.df_ = self.df_.head(nrows)
+        loading_time = time.time()
+        print(
+            f"read_csv no nrows command time: {(loading_time - start_time):.4f} seconds"
+        )
         return self.df_
 
     def read_xml(self, path, **kwargs):
@@ -312,20 +309,21 @@ class ModinBench(AbstractAlgorithm):
         """
         if column == "all":
             column = [c for c in self.df_.columns if self.df_[c].dtype == "float64"]
-        import numpy as np
 
-        # Calculate the percentile values for each column
-        percentiles = np.percentile(
-            self.df_[column].values,
-            [(lower_quantile * 100), (upper_quantile * 100)],
-            axis=0,
+        # Calculate the quantile values directly using Modin's built-in method
+        lower_bound = self.df_[column].quantile(lower_quantile)
+        upper_bound = self.df_[column].quantile(upper_quantile)
+
+        # Use query method to filter rows. This can be more efficient in Modin
+        query_string = " or ".join(
+            [
+                f"({col} < {lower_bound[col]}) or ({col} > {upper_bound[col]})"
+                for col in column
+            ]
         )
+        outliers = self.df_.query(query_string)
 
-        # Create boolean masks for values lower and higher than the quantile values
-        lower_mask = (self.df_[column] < percentiles[0]).any(axis=1)
-        upper_mask = (self.df_[column] > percentiles[1]).any(axis=1)
-
-        return self.df_[lower_mask | upper_mask]
+        return outliers
 
     @timing
     def get_columns_types(self):
@@ -574,9 +572,13 @@ class ModinBench(AbstractAlgorithm):
             columns = self.get_columns()
         f = eval(f)
         # using a default operation so vectorization can be used
-        self.df_[col_name] = np.where(
-            (self.df_[columns[0]] == "") | (self.df_[columns[1]] == ""), "No", "Yes"
+        self.df_[col_name] = self.df_.apply(
+            lambda row: (
+                "No" if (row[columns[0]] == "" or row[columns[1]] == "") else "Yes"
+            ),
+            axis=1,
         )
+
         return self.df_
 
     @timing
@@ -600,8 +602,6 @@ class ModinBench(AbstractAlgorithm):
         Aggregate the dataframe by the provided columns
         then applies the function f on every group
         """
-        import numpy as np
-
         return self.df_.groupby(columns).agg(f)
 
     @timing
