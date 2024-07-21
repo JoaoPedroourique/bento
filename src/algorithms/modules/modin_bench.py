@@ -3,7 +3,7 @@ from typing import Union
 import time
 import os
 
-os.environ["MODIN_ENGINE"] = "dask"  # Modin will use dask
+# os.environ["MODIN_ENGINE"] = "dask"  # Modin will use dask
 # os.environ["MODIN_ENGINE"] = "ray"  # Modin will use Ray
 import modin.pandas as pd
 
@@ -11,7 +11,6 @@ from modin.pandas import DataFrame, Series
 from src.algorithms.utils import timing
 from src.datasets.dataset import Dataset
 from src.algorithms.algorithm import AbstractAlgorithm
-from haversine import haversine
 import psutil
 from .dtypes_for_reading import dtypes
 
@@ -68,6 +67,12 @@ class ModinBench(AbstractAlgorithm):
                 os.environ["RAY_SCHEDULER_EVENTS"] = "0"
                 os.environ["RAY_DEDUP_LOGS"] = "0"
                 os.environ["RAY_verbose_spill_logs"] = "0"
+            if self.type == "dask":
+                from distributed import Client
+
+                # start a local Dask client
+                print("Starting dask client")
+                self.client = Client()
 
     def backup(self):
         """
@@ -141,22 +146,12 @@ class ModinBench(AbstractAlgorithm):
         Read a csv file
         """
         kwargs["dtype"] = dtypes
-        start_time = time.time()
-        self.df_ = pd.read_csv(path, **kwargs)
-        loading_time = time.time()
-        print(
-            f"read_csv no nrows command time: {(loading_time - start_time):.4f} seconds"
-        )
         nrows = kwargs.get("nrows", None)
         del kwargs["nrows"]
 
-        start_time = time.time()
         self.df_ = pd.read_csv(path, **kwargs)
         self.df_ = self.df_.head(nrows)
-        loading_time = time.time()
-        print(
-            f"read_csv no nrows command time: {(loading_time - start_time):.4f} seconds"
-        )
+
         return self.df_
 
     def read_xml(self, path, **kwargs):
