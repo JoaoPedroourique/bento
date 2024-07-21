@@ -73,6 +73,20 @@ class ModinBench(AbstractAlgorithm):
                 # start a local Dask client
                 print("Starting dask client")
                 self.client = Client()
+                # Get the total memory in bytes
+                total_memory = psutil.virtual_memory().total
+
+                # Convert it to GB
+                total_memory_gb = total_memory / (1024**3)
+
+                # Set the memory limit to 85% of the total memory
+                memory_limit = int(total_memory_gb * 0.85)
+                print(f"running with memory limit: {memory_limit}GB")
+
+                # start a local Dask client
+                self.client = Client(processes=True, memory_limit=f"{memory_limit}GB")
+                # wait the cluster is ready
+                self.client.wait_for_workers(1)
 
     def backup(self):
         """
@@ -567,13 +581,9 @@ class ModinBench(AbstractAlgorithm):
             columns = self.get_columns()
         f = eval(f)
         # using a default operation so vectorization can be used
-        self.df_[col_name] = self.df_.apply(
-            lambda row: (
-                "No" if (row[columns[0]] == "" or row[columns[1]] == "") else "Yes"
-            ),
-            axis=1,
+        self.df_[col_name] = np.where(
+            (self.df_[columns[0]] == "") | (self.df_[columns[1]] == ""), "No", "Yes"
         )
-
         return self.df_
 
     @timing
