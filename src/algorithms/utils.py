@@ -51,7 +51,10 @@ def save_to_csv(
         os.makedirs(out_path)
 
     # Create csv file for save results
-    out_log = os.path.join(out_path, f"{algo.name}_run_{timestamp}.csv")
+    if algo.name == "modin_dask":
+        out_log = os.path.join(out_path, f"new_{algo.name}_run_{timestamp}.csv")
+    else:
+        out_log = os.path.join(out_path, f"{algo.name}_run_{timestamp}.csv")
 
     if not os.path.exists(out_log):
         logger = csv.writer(open(out_log, "a"))
