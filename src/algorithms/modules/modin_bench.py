@@ -72,7 +72,6 @@ class ModinBench(AbstractAlgorithm):
 
                 # start a local Dask client
                 print("Starting dask client")
-                self.client = Client()
                 # Get the total memory in bytes
                 total_memory = psutil.virtual_memory().total
 
