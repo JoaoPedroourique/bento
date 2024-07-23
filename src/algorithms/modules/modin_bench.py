@@ -160,10 +160,12 @@ class ModinBench(AbstractAlgorithm):
         """
         kwargs["dtype"] = dtypes
         nrows = kwargs.get("nrows", None)
-        del kwargs["nrows"]
+        if nrows:
+            del kwargs["nrows"]
 
         self.df_ = pd.read_csv(path, **kwargs)
-        self.df_ = self.df_.head(nrows)
+        if nrows:
+            self.df_ = self.df_.head(nrows)
 
         return self.df_
 
