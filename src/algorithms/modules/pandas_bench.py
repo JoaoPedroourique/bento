@@ -142,10 +142,7 @@ class PandasBench(AbstractAlgorithm):
         """
         Read a parquet file
         """
-        if self.name == "pandas20":
-            self.df_ = pd.read_parquet(path, **kwargs, engine="pyarrow")
-        else:
-            self.df_ = pd.read_parquet(path, **kwargs)
+        self.df_ = pd.read_parquet(path, **kwargs, engine="pyarrow")
         return self.df_
 
     @timing

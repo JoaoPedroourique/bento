@@ -1,5 +1,6 @@
 *.csv
 *.csv.gz
+*.parquet
 *.log
 src/algorithms/__pycache__
 src/datasets/__pycache__

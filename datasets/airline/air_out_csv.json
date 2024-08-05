@@ -1,0 +1,27 @@
+{
+  "Input": [
+    {
+      "method": "load_dataset",
+      "input": {
+        "sep": ",",
+        "compression": "infer"
+      },
+      "input_koalas": {
+        "sep": ",",
+        "assume_missing": "True",
+        "compression": "gzip"
+      },
+      "input_vaex": {}
+    },
+    {
+      "method": "force_execution",
+      "input": {}
+    }
+  ],
+  "output": [
+    {
+      "method": "to_csv",
+      "input": {}
+    }
+  ]
+}

@@ -93,7 +93,8 @@ class AbstractAlgorithm(abc.ABC):
                 rows_to_read = max_rows - total_rows
                 if rows_to_read <= 0:
                     break
-                kwargs["nrows"] = rows_to_read
+                if "parquet" not in path:
+                    kwargs["nrows"] = rows_to_read
 
             # Read the file (or part of it)
             df = read_function(f, **kwargs)
