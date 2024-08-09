@@ -231,6 +231,12 @@
     "type": "csv.gz",
     "max_rows": 50000000
   },
+  "io_100m_csv": {
+    "path": "datasets/airline/*.csv.gz",
+    "pipe": "datasets/airline/air_out_csv.json",
+    "type": "csv.gz",
+    "max_rows": 100000000
+  },
   "io_1m_parquet": {
     "path": "datasets/parquet/*.parquet",
     "pipe": "datasets/airline/air_out_parquet.json",
@@ -250,6 +256,12 @@
     "max_rows": 30000000
   },
   "io_50m_parquet": {
+    "path": "datasets/parquet/*.parquet",
+    "pipe": "datasets/airline/air_out_parquet.json",
+    "type": "parquet",
+    "max_rows": 50000000
+  },
+  "io_100m_parquet": {
     "path": "datasets/parquet/*.parquet",
     "pipe": "datasets/airline/air_out_parquet.json",
     "type": "parquet",
