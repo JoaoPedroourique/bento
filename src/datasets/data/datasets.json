@@ -265,6 +265,6 @@
     "path": "datasets/parquet/*.parquet",
     "pipe": "datasets/airline/air_out_parquet.json",
     "type": "parquet",
-    "max_rows": 50000000
+    "max_rows": 100000000
   }
 }
